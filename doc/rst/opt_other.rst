@@ -56,25 +56,15 @@ There are a few other, lesser used, options available. These are shown in :numre
      - Used for inserting endpoint 0 handling code for composite devices. Note - 
        This include must be able to be compiled under ``C``.
      - Undefined
-     - Undefined
    * - ``XUA_USER_INTERFACES``
      - Used for inserting interfaces into descriptor for composite devices. Note - 
        This include must be able to be compiled under ``C``.
      - Undefined
-     - Undefined
-   * - ``XUA_USER_DESCRIPTOR_INCLUDE``
-     - Used for inserting and include file which contains the user descriptors. Note - 
-       This include must be able to be compiled under ``C``.
-     - Undefined
-     - Undefined
-   * - ``XUA_USER_DESCRIPTOR_DECLARATIONS``
-     - Used for inserting descriptor declarations into the descriptor for composite devices. Note - 
-       This include must be able to be compiled under ``C``.
-     - Undefined
-     - Undefined
-   * - ``XUA_USER_DESCRIPTORS``
-     - Used for inserting an include file with descriptors for composite devices. Note - 
-       This include must be able to be compiled under ``C``.
-     - Undefined
+   * - ``XUA_USER_DESCRIPTORS_ENABLE``
+     - Used for inserting and include file which contains the user descriptors. The expected files in your
+       project are ``xua_additional_descriptors_incl.h`` to include any additional include files,
+       ``xua_additional_descriptors_decl.h`` to make the actual declarations and ``xua_additional_descriptors.``
+       to populate the. Note - The include files must be able to be compiled under ``C``.
+     - 0
 
 |endfullwidth|

@@ -24,9 +24,10 @@
 #define PROBE_EMPTY(...) PROBE_EMPTY_(__VA_ARGS__, 1, 0)
 #define PROBE_EMPTY_(a, b, ...) b
 
-#if defined(XUA_USER_DESCRIPTOR_INCLUDE) && (!PROBE_EMPTY(XUA_USER_DESCRIPTOR_INCLUDE))
-#include XUA_USER_DESCRIPTOR_INCLUDE
+#if XUA_USER_DESCRIPTORS_ENABLE
+#include "xua_additional_descriptors_incl.h"
 #endif
+
 
 // Enable BOS descriptor only when DFU is enabled since the only capability we advertise is the MSOS desc with DFU interface enumerating as WinUSB.
 // Enumerating with 0 capabilities doesn't seem to be allowed
@@ -811,7 +812,9 @@ typedef struct
 #endif
 #endif
 
-XUA_USER_DESCRIPTOR_DECLARATIONS
+#if XUA_USER_DESCRIPTORS_ENABLE
+#include "xua_additional_descriptors_decl.h"
+#endif
 
 }__attribute__((packed)) USB_Config_Descriptor_Audio2_t;
 
@@ -2155,8 +2158,8 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
     #include "xua_hid_descriptors.h"
 #endif
 
-#if defined(XUA_USER_DESCRIPTORS) && (!PROBE_EMPTY(XUA_USER_DESCRIPTORS))
-#include XUA_USER_DESCRIPTORS
+#if XUA_USER_DESCRIPTORS_ENABLE
+#include "xua_additional_descriptors.h"
 #endif
 
 };

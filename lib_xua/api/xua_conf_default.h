@@ -1462,20 +1462,12 @@
 #define XUA_USER_INTERFACES
 #endif
 
-/* Allows insertion of an include file into xua_ep0_descriptors.h. */
-#ifndef XUA_USER_DESCRIPTOR_INCLUDE
-#define XUA_USER_DESCRIPTOR_INCLUDE
+/* Allows insertion of an include files into xua_ep0_descriptors.h.
+   Set to 1 to include xua_additional_descriptor_decl.h, xua_additional_descriptors.h and xua_additional_descriptor_defs.h*/
+#ifndef XUA_USER_DESCRIPTORS_ENABLE
+#define XUA_USER_DESCRIPTORS_ENABLE    (0)
 #endif
 
-/* Allows insertion of declarations into xua_ep0_descriptors.h. */
-#ifndef XUA_USER_DESCRIPTOR_DECLARATIONS
-#define XUA_USER_DESCRIPTOR_DECLARATIONS
-#endif
-
-/* Allows insertion of descriptors into xua_ep0_descriptors.h. */
-#ifndef XUA_USER_DESCRIPTORS
-#define XUA_USER_DESCRIPTORS
-#endif
 
 
 /*********************************************************/
