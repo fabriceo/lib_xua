@@ -1427,6 +1427,27 @@
     #endif
 #endif
 
+/* Allows calling of user function before buffer starts. */
+#ifndef XUA_USER_FUNCTION_CALL_PRE_BUFFER
+#define XUA_USER_FUNCTION_CALL_PRE_BUFFER
+#endif
+
+/* Provides a method to insert user IN endpoints. These must be initialised using XUA_USER_EP_INIT. */
+#ifndef XUA_USER_IN_ENDPOINTS
+#define XUA_USER_IN_ENDPOINTS
+#endif
+
+/* Provides a method to insert user OUT endpoints. These must be initialised using XUA_USER_EP_INIT. */
+#ifndef XUA_USER_OUT_ENDPOINTS
+#define XUA_USER_OUT_ENDPOINTS
+#endif
+
+/* Allows inserting of user endpoint init code. Eg. epTypeTableOut[ENDPOINT_NUMBER_OUT_BULK_CDC] = XUD_EPTYPE_INT; */
+#ifndef XUA_USER_EP_INIT
+#define XUA_USER_EP_INIT
+#endif
+
+
 
 /*********************************************************/
 /*** Internal defines below here. NOT FOR MODIFICATION ***/

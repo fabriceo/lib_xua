@@ -18,6 +18,11 @@ UNRELEASED
     a change in clock source
   * ADDED:     Where possible ``_TILE_NUM`` defines are now derived from
     ``PORT_`` defines in the application XN file
+  * ADDED:    ``XUA_USER_IN_ENDPOINTS``, ``XUA_USER_OUT_ENDPOINTS`` and 
+    ``XUA_USER_EP_INIT`` optional defines to provide insertion of user endpoints,
+    allowing composite USB Audio devices.
+  * ADDED:     ``XUA_USER_FUNCTION_CALL_PRE_BUFFER`` define to allow running of
+    user code before XUA buffer starts in the ``main()`` function.
   * CHANGED:   When `Software PLL` is enabled, report external clock as invalid
     when the USB sampling frequency doesn't match the digital input sampling
     frequency

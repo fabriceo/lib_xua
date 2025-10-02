@@ -538,6 +538,8 @@ int main()
 #if (NUM_USB_CHAN_OUT > 0) || (NUM_USB_CHAN_IN > 0) || XUA_HID_ENABLED || defined(MIDI)
             /* Core USB audio task, buffering, USB etc */
             {
+                XUA_USER_FUNCTION_CALL_PRE_BUFFER
+
                 unsigned x;
                 thread_speed();
 
