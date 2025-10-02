@@ -53,9 +53,9 @@ There are a few other, lesser used, options available. These are shown in :numre
        This include must be able to be compiled under ``C``.
      - Undefined
    * - ``XUA_USER_EP0_HANDLERS``
-      - Used for inserting endpoint 0 handling code for composite dvices. Note - 
+     - Used for inserting endpoint 0 handling code for composite dvices. Note - 
        This include must be able to be compiled under ``C``.
-      - Undefined
+     - Undefined
 
 
 |endfullwidth|
