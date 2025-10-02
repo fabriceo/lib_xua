@@ -1447,7 +1447,15 @@
 #define XUA_USER_EP_INIT
 #endif
 
+/* Allows inserting of user endpoint 0 declarations. */
+#ifndef XUA_USER_EP0_DECLARATIONS
+#define XUA_USER_EP0_DECLARATIONS
+#endif
 
+/* Allows inserting of user endpoint 0 handling code. */
+#ifndef XUA_USER_EP0_HANDLERS
+#define XUA_USER_EP0_HANDLERS
+#endif
 
 /*********************************************************/
 /*** Internal defines below here. NOT FOR MODIFICATION ***/
@@ -1473,7 +1481,7 @@ enum USBEndpointNumber_In
 #if XUA_OR_STATIC_HID_ENABLED
     ENDPOINT_NUMBER_IN_HID,
 #endif
-    XUA_USER_IN_ENDPOINTS,          /* Optional additional endpoints (eg. CDC)*/
+    XUA_USER_IN_ENDPOINTS           /* Optional additional endpoints (eg. CDC)*/
     XUA_ENDPOINT_COUNT_IN           /* End marker */
 };
 
@@ -1489,7 +1497,7 @@ enum USBEndpointNumber_Out
 #if XUA_OR_STATIC_HID_ENABLED && HID_OUT_REQUIRED
     ENDPOINT_NUMBER_OUT_HID,
 #endif
-    XUA_USER_OUT_ENDPOINTS,
+    XUA_USER_OUT_ENDPOINTS
     XUA_ENDPOINT_COUNT_OUT          /* End marker */
 };
 

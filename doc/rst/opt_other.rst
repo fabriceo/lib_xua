@@ -48,7 +48,14 @@ There are a few other, lesser used, options available. These are shown in :numre
      - Used for inserting code to initialise additional user endpoints. Eg.
        ``#define XUA_USER_EP_INIT        epTypeTableOut[ENDPOINT_NUMBER_OUT_BULK_CDC] = XUD_EPTYPE_INT;``
      - Undefined
+   * - ``XUA_USER_EP0_DECLARATIONS``
+     - Used for declaring any external functions of globals withing the endpoint 0 handling function. Note - 
+       This include must be able to be compiled under ``C``.
+     - Undefined
+   * - ``XUA_USER_EP0_HANDLERS``
+      - Used for inserting endpoint 0 handling code for composite dvices. Note - 
+       This include must be able to be compiled under ``C``.
+      - Undefined
 
 
-  
 |endfullwidth|

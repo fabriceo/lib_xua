@@ -39,9 +39,7 @@
 #include "dsd_support.h"
 #endif
 
-#if CDC_VSP
-extern XUD_Result_t ControlInterfaceClassRequests(XUD_ep ep_out, XUD_ep ep_in, USB_SetupPacket_t sp);
-#endif
+XUA_USER_EP0_DECLARATIONS
 
 #define DEBUG_UNIT XUA_EP0
 
@@ -918,16 +916,9 @@ void XUA_Endpoint0_loop(XUD_Result_t result, USB_SetupPacket_t sp, chanend c_ep0
                         }
 #endif
                     }
-#if CDC_VSP
-                    /* Inspect for CDC Communications Class interface num */
-                    if(interfaceNum == INTERFACE_NUMBER_CDC_COMMAND)
-                    {
-                        /* Returns  XUD_RES_OKAY if handled,
-                         *          XUD_RES_ERR if not handled,
-                         *          XUD_RES_RST for bus reset */
-                        result = ControlInterfaceClassRequests(ep0_out, ep0_in, sp);
-                    }
-#endif
+
+XUA_USER_EP0_HANDLERS
+
                 }
                 break;
 
