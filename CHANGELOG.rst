@@ -18,9 +18,11 @@ UNRELEASED
     a change in clock source
   * ADDED:     Where possible ``_TILE_NUM`` defines are now derived from
     ``PORT_`` defines in the application XN file
-  * ADDED:    ``XUA_USER_IN_ENDPOINTS``, ``XUA_USER_OUT_ENDPOINTS``, 
-    ``XUA_USER_EP_INIT``, ``XUA_USER_EP0_DECLARATIONS``, and
-    ``XUA_USER_EP0_HANDLERS`` optional defines to provide insertion of user endpoints,
+  * ADDED:    ``XUA_USER_IN_ENDPOINTS``, ``XUA_USER_OUT_ENDPOINTS``,
+    ``XUA_USER_EP_INIT``, ``XUA_USER_EP0_DECLARATIONS``, ``XUA_USER_EP0_HANDLERS``,
+    ``XUA_USER_INTERFACES``, ``XUA_USER_DESCRIPTOR_INCLUDE``,
+    ``XUA_USER_DESCRIPTOR_DECLARATIONS`` and ``XUA_USER_DESCRIPTORS``
+     optional defines to provide insertion of user endpoints,
     allowing composite USB Audio devices to be built.
   * ADDED:     ``XUA_USER_FUNCTION_CALL_PRE_BUFFER`` define to allow running of
     user code before XUA buffer starts in the ``main()`` function.

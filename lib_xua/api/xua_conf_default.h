@@ -1442,20 +1442,41 @@
 #define XUA_USER_OUT_ENDPOINTS
 #endif
 
-/* Allows inserting of user endpoint init code. Eg. epTypeTableOut[ENDPOINT_NUMBER_OUT_BULK_CDC] = XUD_EPTYPE_INT; */
+/* Allows insertion of user endpoint init code. Eg. epTypeTableOut[ENDPOINT_NUMBER_OUT_BULK_CDC] = XUD_EPTYPE_INT; */
 #ifndef XUA_USER_EP_INIT
 #define XUA_USER_EP_INIT
 #endif
 
-/* Allows inserting of user endpoint 0 declarations. */
+/* Allows insertion of user endpoint 0 declarations. */
 #ifndef XUA_USER_EP0_DECLARATIONS
 #define XUA_USER_EP0_DECLARATIONS
 #endif
 
-/* Allows inserting of user endpoint 0 handling code. */
+/* Allows insertion of user endpoint 0 handling code. */
 #ifndef XUA_USER_EP0_HANDLERS
 #define XUA_USER_EP0_HANDLERS
 #endif
+
+/* Allows insertion of user USB interfaces into descriptors. */
+#ifndef XUA_USER_INTERFACES
+#define XUA_USER_INTERFACES
+#endif
+
+/* Allows insertion of an include file into xua_ep0_descriptors.h. */
+#ifndef XUA_USER_DESCRIPTOR_INCLUDE
+#define XUA_USER_DESCRIPTOR_INCLUDE
+#endif
+
+/* Allows insertion of declarations into xua_ep0_descriptors.h. */
+#ifndef XUA_USER_DESCRIPTOR_DECLARATIONS
+#define XUA_USER_DESCRIPTOR_DECLARATIONS
+#endif
+
+/* Allows insertion of descriptors into xua_ep0_descriptors.h. */
+#ifndef XUA_USER_DESCRIPTORS
+#define XUA_USER_DESCRIPTORS
+#endif
+
 
 /*********************************************************/
 /*** Internal defines below here. NOT FOR MODIFICATION ***/

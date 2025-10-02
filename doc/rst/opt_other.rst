@@ -49,13 +49,32 @@ There are a few other, lesser used, options available. These are shown in :numre
        ``#define XUA_USER_EP_INIT        epTypeTableOut[ENDPOINT_NUMBER_OUT_BULK_CDC] = XUD_EPTYPE_INT;``
      - Undefined
    * - ``XUA_USER_EP0_DECLARATIONS``
-     - Used for declaring any external functions of globals withing the endpoint 0 handling function. Note - 
+     - Used for declaring any external functions of globals within the endpoint 0 handling function. Note - 
        This include must be able to be compiled under ``C``.
      - Undefined
    * - ``XUA_USER_EP0_HANDLERS``
-     - Used for inserting endpoint 0 handling code for composite dvices. Note - 
+     - Used for inserting endpoint 0 handling code for composite devices. Note - 
        This include must be able to be compiled under ``C``.
      - Undefined
-
+     - Undefined
+   * - ``XUA_USER_INTERFACES``
+     - Used for inserting interfaces into descriptor for composite devices. Note - 
+       This include must be able to be compiled under ``C``.
+     - Undefined
+     - Undefined
+   * - ``XUA_USER_DESCRIPTOR_INCLUDE``
+     - Used for inserting and include file which contains the user descriptors. Note - 
+       This include must be able to be compiled under ``C``.
+     - Undefined
+     - Undefined
+   * - ``XUA_USER_DESCRIPTOR_DECLARATIONS``
+     - Used for inserting descriptor declarations into the descriptor for composite devices. Note - 
+       This include must be able to be compiled under ``C``.
+     - Undefined
+     - Undefined
+   * - ``XUA_USER_DESCRIPTORS``
+     - Used for inserting an include file with descriptors for composite devices. Note - 
+       This include must be able to be compiled under ``C``.
+     - Undefined
 
 |endfullwidth|
