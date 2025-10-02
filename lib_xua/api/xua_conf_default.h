@@ -3,8 +3,8 @@
 /*
  * @brief       Defines relating to device configuration and customisation of lib_xua
  */
-#ifndef _XUA_CONF_DEFAULT_H_
-#define _XUA_CONF_DEFAULT_H_
+#ifndef XUA_CONF_DEFAULT_H_
+#define XUA_CONF_DEFAULT_H_
 
 #ifdef __xua_conf_h_exists__
     #include "xua_conf.h"
@@ -14,47 +14,121 @@
  * Tile arrangement defines
  */
 
-/**
- * @brief Location (tile) of audio I/O. Default: 0
- */
-#ifndef AUDIO_IO_TILE
-#define AUDIO_IO_TILE   (0)
+/* Tidy up legacy defines */
+#ifdef AUDIO_IO_TILE
+#define XUA_AUDIO_IO_TILE_NUM AUDIO_IO_TILE
+#endif
+
+#ifdef XUD_TILE
+#define XUA_XUD_TILE_NUM XUD_TILE
+#endif
+
+#ifdef MIDI_TILE
+#define XUA_MIDI_TILE_NUM MIDI_TILE
+#endif
+
+#ifdef SPDIF_TX_TILE
+#define XUA_SPDIF_TX_TILE_NUM SPDIF_TX_TILE
+#endif
+
+#ifdef PDM_TILE
+#define XUA_MIC_PDM_TILE_NUM PDM_TILE
+#endif
+
+#ifdef PLL_REF_TILE
+#define XUA_PLL_REF_TILE_NUM PLL_REF_TILE
 #endif
 
 /**
- * @brief Location (tile) of audio I/O. Default: 0
+ * @brief Location (tile) of audio I/O.
+ *
+ * The tile number to run the AudioHub() task.
+ * The location if automatically detected from ports in the XN file.
  */
-#ifndef XUD_TILE
-#define XUD_TILE        (0)
+#ifndef XUA_AUDIO_IO_TILE_NUM
+    #ifdef PORT_I2S_DAC0_TILE_NUM
+        #define XUA_AUDIO_IO_TILE_NUM   (PORT_I2S_DAC0_TILE_NUM)
+    #elif defined(PORT_I2S_ADC0_TILE_NUM)
+        #define XUA_AUDIO_IO_TILE_NUM   (PORT_I2S_ADC0_TILE_NUM)
+    #elif defined(PORT_I2S_BCLK_TILE_NUM)
+        #define XUA_AUDIO_IO_TILE_NUM   (PORT_I2S_BCLK_TILE_NUM)
+    #else
+        /* If cannot automatically detect, default to tile 0 */
+        #define XUA_AUDIO_IO_TILE_NUM   (0)
+    #endif
 #endif
 
 /**
- * @brief Location (tile) of MIDI I/O. Default: AUDIO_IO_TILE
+ * @brief Location (tile) of audio I/O.
+ *
+ * The tile number to run lib_xud tasks on.
  */
-#ifndef MIDI_TILE
-#define MIDI_TILE       AUDIO_IO_TILE
+#ifndef XUA_XUD_TILE_NUM
+#define XUA_XUD_TILE_NUM        (0)
 #endif
 
 /**
- * @brief Location (tile) of SPDIF Tx. Default: AUDIO_IO_TILE
+ * @brief Location (tile) of MIDI I/O.
+ *
+ * The tile number to run MIDI tasks on.
+ * The location if automatically detected from ports in the XN file.
  */
-#ifndef SPDIF_TX_TILE
-#define SPDIF_TX_TILE   AUDIO_IO_TILE
+#ifndef XUA_MIDI_TILE_NUM
+    #ifdef PORT_MIDI_IN_TILE
+        #define XUA_MIDI_TILE_NUM (PORT_MIDI_IN_TILE)
+    #elif defined(PORT_MIDI_OUT_TILE)
+        #define XUA_MIDI_TILE_NUM (PORT_MIDI_OUT_TILE)
+    #else
+        /* If cannot automatically detect, default to XUA_AUDIO_IO_TILE_NUM */
+        #define XUA_MIDI_TILE_NUM   XUA_AUDIO_IO_TILE_NUM
+    #endif
 #endif
 
 /**
- * @brief Location (tile) of PDM Rx. Default: AUDIO_IO_TILE
+ * @brief Location (tile) of SPDIF Tx.
+ *
+ * The tile number to run the S/PDIF tx task on.
+ * The location if automatically detected from ports in the XN file.
  */
-#ifndef PDM_TILE
-#define PDM_TILE        AUDIO_IO_TILE
+#ifndef XUA_SPDIF_TX_TILE_NUM
+    #ifdef PORT_SPDIF_TX_TILE
+        #define XUA_SPDIF_TX_TILE_NUM (PORT_SPDIF_TX_TILE)
+    #else
+        /* If cannot automatically detect, default to XUA_AUDIO_IO_TILE_NUM */
+        #define XUA_SPDIF_TX_TILE_NUM     XUA_AUDIO_IO_TILE_NUM
+    #endif
 #endif
 
 /**
- * @brief Location (tile) of reference signal to CS2100. Default: AUDIO_IO_TILE
+ * @brief Location (tile) of PDM Rx.
+ *
+ * The tile number to run the PDM Mics tasks on.
+ * The location if automatically detected from ports in the XN file.
  */
-#ifndef PLL_REF_TILE
-#define PLL_REF_TILE    AUDIO_IO_TILE
+#ifndef XUA_MIC_PDM_TILE_NUM
+    #ifdef PORT_PDM_CLK_TILE_NUM
+        #define XUA_MIC_PDM_TILE_NUM     PORT_PDM_CLK_TILE_NUM
+    #else
+        /* If cannot automatically detect, default to XUA_AUDIO_IO_TILE_NUM */
+        #define XUA_MIC_PDM_TILE_NUM     XUA_AUDIO_IO_TILE_NUM
+    #endif
 #endif
+
+/**
+ * @brief Location (tile) of reference signal to CS2100.
+ *
+ * The tile number to run the PLL reference clock task on.
+ * The location if automatically detected from ports in the XN file.
+ */
+#ifndef XUA_PLL_REF_TILE_NUM
+    #ifdef PORT_PLL_REF_TILE_NUM
+        #define XUA_PLL_REF_TILE_NUM   PORT_PLL_REF_TILE_NUM
+    #else
+        /* If cannot automatically detect, default to XUA_AUDIO_IO_TILE_NUM */
+        #define XUA_PLL_REF_TILE_NUM   XUA_AUDIO_IO_TILE_NUM
+    #endif
+#endif
+
 
 /*
  * Audio channel based defines
@@ -364,6 +438,17 @@
     #endif
 #endif
 
+/** @brief Input channel terminal type override to line in
+ * 
+ * Set to 1 to have USB input present as line-in to the host
+ * 
+ * Default: disabled (input channels appear as mics)
+ *
+ */
+#ifndef XUA_DEC_INPUT_TYPE_LINE_IN
+    #define XUA_DEC_INPUT_TYPE_LINE_IN (0)
+#endif
+
 /*
  * Feature defines
  */
@@ -385,13 +470,6 @@
  * */
 #ifndef PDM_MIC_INDEX
 #define PDM_MIC_INDEX           (0)
-#endif
-
-/**
- * @brief Size of a frame of microphone data samples. Default: 1
- */
-#ifndef XUA_MIC_FRAME_SIZE
-#define XUA_MIC_FRAME_SIZE      (1)
 #endif
 
 /**
@@ -1359,11 +1437,11 @@
 enum USBEndpointNumber_In
 {
     ENDPOINT_NUMBER_IN_CONTROL,     /* Endpoint 0 */
-#if (NUM_USB_CHAN_OUT > 0) && ((NUM_USB_CHAN_IN == 0) || defined(UAC_FORCE_FEEDBACK_EP))
-    ENDPOINT_NUMBER_IN_FEEDBACK,
-#endif
 #if (NUM_USB_CHAN_IN != 0)
     ENDPOINT_NUMBER_IN_AUDIO,
+#endif
+#if (NUM_USB_CHAN_OUT > 0) && ((NUM_USB_CHAN_IN == 0) || defined(UAC_FORCE_FEEDBACK_EP))
+    ENDPOINT_NUMBER_IN_FEEDBACK,
 #endif
 #if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN)
     ENDPOINT_NUMBER_IN_INTERRUPT,   /* Audio interrupt/status EP */
@@ -1374,10 +1452,7 @@ enum USBEndpointNumber_In
 #if XUA_OR_STATIC_HID_ENABLED
     ENDPOINT_NUMBER_IN_HID,
 #endif
-#if CDC_VSP
-    ENDPOINT_NUMBER_IN_INT_CDC,
-    ENDPOINT_NUMBER_IN_BULK_CDC,
-#endif
+    XUA_USER_IN_ENDPOINTS,          /* Optional additional endpoints (eg. CDC)*/
     XUA_ENDPOINT_COUNT_IN           /* End marker */
 };
 
@@ -1393,9 +1468,7 @@ enum USBEndpointNumber_Out
 #if XUA_OR_STATIC_HID_ENABLED && HID_OUT_REQUIRED
     ENDPOINT_NUMBER_OUT_HID,
 #endif
-#if CDC_VSP
-    ENDPOINT_NUMBER_OUT_BULK_CDC,
-#endif
+    XUA_USER_OUT_ENDPOINTS,
     XUA_ENDPOINT_COUNT_OUT          /* End marker */
 };
 
@@ -1478,7 +1551,6 @@ enum USBEndpointNumber_Out
 #define DFU_PRODUCT_STR_INDEX       offsetof(StringDescTable_t, productStr_Audio2)/sizeof(char *)
 #else
 #define DFU_PRODUCT_STR_INDEX       offsetof(StringDescTable_t, productStr_Audio1)/sizeof(char *)
-#endif
 #endif
 
 /* USB test mode support enabled by default (Required for compliance testing) */
@@ -1736,3 +1808,34 @@ enum USBEndpointNumber_Out
 #define ENUMERATE_CONTROL_INTF_AS_WINUSB    1
 #endif
 
+/**
+ * @brief Macro specifying if an mclk input and a second mclk input are required
+ */
+#define _NEED_MCLK_FOR_I2S \
+  (((I2S_CHANS_DAC != 0) || (I2S_CHANS_ADC != 0)) && (!CODEC_MASTER))
+
+#define _NEED_MCLK_FOR_DIG_RX \
+  (XUA_USE_SW_PLL && (XUA_ADAT_RX_EN || XUA_SPDIF_RX_EN))
+
+#define _NEED_MCLK_FOR_ADAT_TX (XUA_ADAT_TX_EN)
+#define _NEED_MCLK_FOR_SPDIF_TX (XUA_SPDIF_TX_EN)
+#define _NEED_MCLK_FOR_USB (XUA_USB_EN)
+
+/* Need mclk */
+#define MCLK_REQUIRED ( \
+    (_NEED_MCLK_FOR_I2S) || \
+    (_NEED_MCLK_FOR_DIG_RX) || \
+    (_NEED_MCLK_FOR_ADAT_TX) || \
+    (_NEED_MCLK_FOR_SPDIF_TX && (SPDIF_TX_TILE == XUA_AUDIO_IO_TILE_NUM)) || \
+    (_NEED_MCLK_FOR_USB && (XUA_AUDIO_IO_TILE_NUM == XUA_XUD_TILE_NUM)) \
+)
+
+/* Need second mclk -
+ - USB is enabled and present on a different tile than audio, a second mclk will be needed for USB feedback calculation
+ - SPDIF TX is enabled and present on a different tile than audio */
+#define SECOND_MCLK_REQUIRED ( \
+    (_NEED_MCLK_FOR_USB && (XUA_XUD_TILE_NUM != XUA_AUDIO_IO_TILE_NUM)) || \
+    (_NEED_MCLK_FOR_SPDIF_TX && (XUA_SPDIF_TX_TILE_NUM != XUA_AUDIO_IO_TILE_NUM)) \
+)
+
+#endif /* _XUA_CONF_DEFAULT_H_ */

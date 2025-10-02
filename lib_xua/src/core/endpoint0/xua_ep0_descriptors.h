@@ -74,6 +74,17 @@
 #define FEEDBACK_INTERVAL_HS           (4)         /* Only values <= 1 frame (4) supported by MS */
 #define FEEDBACK_INTERVAL_FS           (1)         /* Has to be 1 */
 
+/* bLockDelayUnits and wLockDelay fields are only applicable for synchronous and adaptive
+endpoints. For asynchronous endpoints, the clock is generated internally in the audio function and
+is completely independent. In this case, bLockDelayUnits and wLockDelay must be set to zero. */
+#if (XUA_SYNCMODE == XUA_SYNCMODE_ASYNC)
+#define _XUA_B_LOCK_DELAY_UNITS       (0x00)      /* Undefined */
+#define _XUA_W_LOCK_DELAY              (0x0000)
+#else
+#define _XUA_B_LOCK_DELAY_UNITS       (0x02)      /* Decoded PCM samples */
+#define _XUA_W_LOCK_DELAY              (0x0008)
+#endif
+
 #if __STDC__
 typedef struct
 {
@@ -571,73 +582,84 @@ unsigned char devQualDesc_Null[] =
     #define MIXER_LENGTH                (0)
 #endif
 
-/* Max packet sizes:
- * Samples per channel. e.g (192000+7999/8000) = 24
- * Must allow 1 sample extra per chan (24 + 1) = 25
- * Multiply by number of channels and bytes      25 * 2 * 4 = 200 bytes
- * TODO Output doesn't get modified by channel count
-*/
-#define MAX_PACKET_SIZE_MULT_OUT_HS ((((MAX_FREQ+7999)/8000)+1) * NUM_USB_CHAN_OUT)
-#define MAX_PACKET_SIZE_MULT_OUT_FS ((((MAX_FREQ_FS+999)/1000)+1) * NUM_USB_CHAN_OUT_FS)
 
-#define HS_STREAM_FORMAT_OUTPUT_1_MAXPACKETSIZE (MAX_PACKET_SIZE_MULT_OUT_HS * HS_STREAM_FORMAT_OUTPUT_1_SUBSLOT_BYTES)
-#define HS_STREAM_FORMAT_OUTPUT_2_MAXPACKETSIZE (MAX_PACKET_SIZE_MULT_OUT_HS * HS_STREAM_FORMAT_OUTPUT_2_SUBSLOT_BYTES)
-#define HS_STREAM_FORMAT_OUTPUT_3_MAXPACKETSIZE (MAX_PACKET_SIZE_MULT_OUT_HS * HS_STREAM_FORMAT_OUTPUT_3_SUBSLOT_BYTES)
+// OUTPUT
+/* Endpoint descriptor wMaxPacketSize */
+#define HS_STREAM_FORMAT_OUTPUT_1_EP_DESC_WMAXPACKETSIZE (HS_STREAM_FORMAT_OUTPUT_1_MAXPACKETSIZE)
+#define HS_STREAM_FORMAT_OUTPUT_2_EP_DESC_WMAXPACKETSIZE (HS_STREAM_FORMAT_OUTPUT_2_MAXPACKETSIZE)
+#define HS_STREAM_FORMAT_OUTPUT_3_EP_DESC_WMAXPACKETSIZE (HS_STREAM_FORMAT_OUTPUT_3_MAXPACKETSIZE)
 
-#if (HS_STREAM_FORMAT_OUTPUT_1_MAXPACKETSIZE > 1024)
-#warning HS_STREAM_FORMAT_OUTPUT_1_MAXPACKETSIZE > 1024
-#undef HS_STREAM_FORMAT_OUTPUT_1_MAXPACKETSIZE
-#define HS_STREAM_FORMAT_OUTPUT_1_MAXPACKETSIZE 1024
+#if (XUD_USB_ISO_MAX_TXNS_PER_MICROFRAME > 1) /* HiBW enabled*/
+    #if (MAX_HS_STREAM_PACKETSIZE > 1024) /* Configure wMaxPacketSize for multiple transactions per transfer*/
+        #undef HS_STREAM_FORMAT_OUTPUT_1_EP_DESC_WMAXPACKETSIZE
+        #define HS_STREAM_FORMAT_OUTPUT_1_EP_DESC_WMAXPACKETSIZE (((XUD_USB_ISO_MAX_TXNS_PER_MICROFRAME-1) << 11) | (XUD_USB_ISO_EP_MAX_TXN_SIZE & 0x7ff))
+
+        #undef HS_STREAM_FORMAT_OUTPUT_2_EP_DESC_WMAXPACKETSIZE
+        #define HS_STREAM_FORMAT_OUTPUT_2_EP_DESC_WMAXPACKETSIZE (((XUD_USB_ISO_MAX_TXNS_PER_MICROFRAME-1) << 11) | (XUD_USB_ISO_EP_MAX_TXN_SIZE & 0x7ff))
+
+        #undef HS_STREAM_FORMAT_OUTPUT_3_EP_DESC_WMAXPACKETSIZE
+        #define HS_STREAM_FORMAT_OUTPUT_3_EP_DESC_WMAXPACKETSIZE (((XUD_USB_ISO_MAX_TXNS_PER_MICROFRAME-1) << 11) | (XUD_USB_ISO_EP_MAX_TXN_SIZE & 0x7ff))
+    #endif
+
+#else /* HiBW not enabled*/
+    #if (HS_STREAM_FORMAT_OUTPUT_1_MAXPACKETSIZE > 1024) /* When HiBW not enabled, limit wMaxPacketSize to 1024 bytes to comply with USB 2.0 high-speed isochronous transfer limit*/
+    #warning HS_STREAM_FORMAT_OUTPUT_1_MAXPACKETSIZE > 1024
+    #undef HS_STREAM_FORMAT_OUTPUT_1_EP_DESC_WMAXPACKETSIZE
+    #define HS_STREAM_FORMAT_OUTPUT_1_EP_DESC_WMAXPACKETSIZE (1024)
+    #endif
+
+    #if (HS_STREAM_FORMAT_OUTPUT_2_MAXPACKETSIZE > 1024)
+    #warning HS_STREAM_FORMAT_OUTPUT_2_MAXPACKETSIZE > 1024
+    #undef HS_STREAM_FORMAT_OUTPUT_2_EP_DESC_WMAXPACKETSIZE
+    #define HS_STREAM_FORMAT_OUTPUT_2_EP_DESC_WMAXPACKETSIZE (1024)
+    #endif
+
+    #if (HS_STREAM_FORMAT_OUTPUT_3_MAXPACKETSIZE > 1024)
+    #warning HS_STREAM_FORMAT_OUTPUT_3_MAXPACKETSIZE > 1024
+    #undef HS_STREAM_FORMAT_OUTPUT_3_EP_DESC_WMAXPACKETSIZE
+    #define HS_STREAM_FORMAT_OUTPUT_3_EP_DESC_WMAXPACKETSIZE (1024)
+    #endif
 #endif
 
-#if (HS_STREAM_FORMAT_OUTPUT_2_MAXPACKETSIZE > 1024)
-#warning HS_STREAM_FORMAT_OUTPUT_2_MAXPACKETSIZE > 1024
-#undef HS_STREAM_FORMAT_OUTPUT_2_MAXPACKETSIZE
-#define HS_STREAM_FORMAT_OUTPUT_2_MAXPACKETSIZE 1024
-#endif
+// INPUT
+/* Endpoint descriptor wMaxPacketSize */
+#define HS_STREAM_FORMAT_INPUT_1_EP_DESC_WMAXPACKETSIZE (HS_STREAM_FORMAT_INPUT_1_MAXPACKETSIZE)
+#define HS_STREAM_FORMAT_INPUT_2_EP_DESC_WMAXPACKETSIZE (HS_STREAM_FORMAT_INPUT_2_MAXPACKETSIZE)
+#define HS_STREAM_FORMAT_INPUT_3_EP_DESC_WMAXPACKETSIZE (HS_STREAM_FORMAT_INPUT_3_MAXPACKETSIZE)
 
-#if (HS_STREAM_FORMAT_OUTPUT_3_MAXPACKETSIZE > 1024)
-#warning HS_STREAM_FORMAT_OUTPUT_3_MAXPACKETSIZE > 1024
-#undef HS_STREAM_FORMAT_OUTPUT_3_MAXPACKETSIZE
-#define HS_STREAM_FORMAT_OUTPUT_3_MAXPACKETSIZE 1024
-#endif
+#if (XUD_USB_ISO_MAX_TXNS_PER_MICROFRAME > 1) /* HiBW enabled*/
+    #if (MAX_HS_STREAM_PACKETSIZE > 1024) /* Configure wMaxPacketSize for multiple transactions per transfer*/
+        #undef HS_STREAM_FORMAT_INPUT_1_EP_DESC_WMAXPACKETSIZE
+        #define HS_STREAM_FORMAT_INPUT_1_EP_DESC_WMAXPACKETSIZE (((XUD_USB_ISO_MAX_TXNS_PER_MICROFRAME-1) << 11) | (XUD_USB_ISO_EP_MAX_TXN_SIZE & 0x7ff))
 
-#define FS_STREAM_FORMAT_OUTPUT_1_MAXPACKETSIZE (MAX_PACKET_SIZE_MULT_OUT_FS * FS_STREAM_FORMAT_OUTPUT_1_SUBSLOT_BYTES)
-#define FS_STREAM_FORMAT_OUTPUT_2_MAXPACKETSIZE (MAX_PACKET_SIZE_MULT_OUT_FS * FS_STREAM_FORMAT_OUTPUT_2_SUBSLOT_BYTES)
-#define FS_STREAM_FORMAT_OUTPUT_3_MAXPACKETSIZE (MAX_PACKET_SIZE_MULT_OUT_FS * FS_STREAM_FORMAT_OUTPUT_3_SUBSLOT_BYTES)
+        #undef HS_STREAM_FORMAT_INPUT_2_EP_DESC_WMAXPACKETSIZE
+        #define HS_STREAM_FORMAT_INPUT_2_EP_DESC_WMAXPACKETSIZE (((XUD_USB_ISO_MAX_TXNS_PER_MICROFRAME-1) << 11) | (XUD_USB_ISO_EP_MAX_TXN_SIZE & 0x7ff))
 
-/* Input Packet Sizes: high-speed */
+        #undef HS_STREAM_FORMAT_INPUT_3_EP_DESC_WMAXPACKETSIZE
+        #define HS_STREAM_FORMAT_INPUT_3_EP_DESC_WMAXPACKETSIZE (((XUD_USB_ISO_MAX_TXNS_PER_MICROFRAME-1) << 11) | (XUD_USB_ISO_EP_MAX_TXN_SIZE & 0x7ff))
 
-#define MAX_PACKET_SIZE_MULT_INPUT_1_HS  ((((MAX_FREQ+7999)/8000)+1) * HS_STREAM_FORMAT_INPUT_1_CHAN_COUNT)
-#define MAX_PACKET_SIZE_MULT_INPUT_2_HS  ((((MAX_FREQ+7999)/8000)+1) * HS_STREAM_FORMAT_INPUT_2_CHAN_COUNT)
-#define MAX_PACKET_SIZE_MULT_INPUT_3_HS  ((((MAX_FREQ+7999)/8000)+1) * HS_STREAM_FORMAT_INPUT_3_CHAN_COUNT)
+    #endif
+#else
+    #if (HS_STREAM_FORMAT_INPUT_1_MAXPACKETSIZE > 1024) /* When HiBW not enabled, limit wMaxPacketSize to 1024 bytes to comply with USB 2.0 high-speed isochronous transfer limit*/
+    #warning HS_STREAM_FORMAT_INPUT_1_MAXPACKETSIZE > 1024
+    #undef HS_STREAM_FORMAT_INPUT_1_EP_DESC_WMAXPACKETSIZE
+    #define HS_STREAM_FORMAT_INPUT_1_EP_DESC_WMAXPACKETSIZE (1024)
+    #endif
 
-/* TODO SUBSLOT_BYTES shared */
-#define HS_STREAM_FORMAT_INPUT_1_MAXPACKETSIZE (MAX_PACKET_SIZE_MULT_INPUT_1_HS * HS_STREAM_FORMAT_INPUT_1_SUBSLOT_BYTES)
-#define HS_STREAM_FORMAT_INPUT_2_MAXPACKETSIZE (MAX_PACKET_SIZE_MULT_INPUT_1_HS * HS_STREAM_FORMAT_INPUT_1_SUBSLOT_BYTES)
-#define HS_STREAM_FORMAT_INPUT_3_MAXPACKETSIZE (MAX_PACKET_SIZE_MULT_INPUT_1_HS * HS_STREAM_FORMAT_INPUT_1_SUBSLOT_BYTES)
+    #if (HS_STREAM_FORMAT_INPUT_2_MAXPACKETSIZE > 1024)
+    #warning HS_STREAM_FORMAT_INPUT_2_MAXPACKETSIZE > 1024
+    #undef HS_STREAM_FORMAT_INPUT_2_EP_DESC_WMAXPACKETSIZE
+    #define HS_STREAM_FORMAT_INPUT_2_EP_DESC_WMAXPACKETSIZE (1024)
+    #endif
 
-#if (HS_STREAM_FORMAT_INPUT_1_MAXPACKETSIZE > 1024)
-#warning HS_STREAM_FORMAT_INPUT_1_MAXPACKETSIZE > 1024
-#undef HS_STREAM_FORMAT_INPUT_1_MAXPACKETSIZE
-#define HS_STREAM_FORMAT_INPUT_1_MAXPACKETSIZE 1024
-#endif
-
-#if (HS_STREAM_FORMAT_INPUT_2_MAXPACKETSIZE > 1024)
-#warning HS_STREAM_FORMAT_INPUT_2_MAXPACKETSIZE > 1024
-#undef HS_STREAM_FORMAT_INPUT_2_MAXPACKETSIZE
-#define HS_STREAM_FORMAT_INPUT_2_MAXPACKETSIZE 1024
-#endif
-
-#if (HS_STREAM_FORMAT_INPUT_3_MAXPACKETSIZE > 1024)
-#warning HS_STREAM_FORMAT_INPUT_3_MAXPACKETSIZE > 1024
-#undef HS_STREAM_FORMAT_INPUT_3_MAXPACKETSIZE
-#define HS_STREAM_FORMAT_INPUT_3_MAXPACKETSIZE 1024
+    #if (HS_STREAM_FORMAT_INPUT_3_MAXPACKETSIZE > 1024)
+    #warning HS_STREAM_FORMAT_INPUT_3_MAXPACKETSIZE > 1024
+    #undef HS_STREAM_FORMAT_INPUT_3_EP_DESC_WMAXPACKETSIZE
+    #define HS_STREAM_FORMAT_INPUT_3_EP_DESC_WMAXPACKETSIZE (1024)
+    #endif
 #endif
 
 /* Input Packet Sizes: full-speed */
-#define MAX_PACKET_SIZE_MULT_IN_FS  ((((MAX_FREQ_FS+999)/1000)+1) * NUM_USB_CHAN_IN_FS)
-#define FS_STREAM_FORMAT_INPUT_1_MAXPACKETSIZE (MAX_PACKET_SIZE_MULT_IN_FS * FS_STREAM_FORMAT_INPUT_1_SUBSLOT_BYTES)
 
 #if (NUM_CLOCKS == 1)
 #define USB_Descriptor_Audio_ClockSelector_t USB_Descriptor_Audio_ClockSelector_1_t
@@ -1160,7 +1182,11 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
             .bDescriptorType           = UAC_CS_DESCTYPE_INTERFACE,
             .bDescriptorSubtype        = UAC_CS_AC_INTERFACE_SUBTYPE_INPUT_TERMINAL,
             .bTerminalID               = ID_IT_AUD,
+#if XUA_DESC_INPUT_TYPE_LINE_IN
+            .wTerminalType             = UAC_TT_EXTERNAL_TERMTYPE_LINE_CONNECTOR,            
+#else            
             .wTerminalType             = UAC_TT_INPUT_TERMTYPE_MICROPHONE,
+#endif //
             .bAssocTerminal            = 0x00,
             .bCSourceID                = ID_CLKSEL,
             .bNrChannels               = NUM_USB_CHAN_IN,
@@ -1515,7 +1541,7 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
 #else
     #error "Bad XUA_SYNCMODE"
 #endif
-        .wMaxPacketSize                 = HS_STREAM_FORMAT_OUTPUT_1_MAXPACKETSIZE,
+        .wMaxPacketSize                 = HS_STREAM_FORMAT_OUTPUT_1_EP_DESC_WMAXPACKETSIZE,
         .bInterval                      = 1,
     },
 
@@ -1527,8 +1553,8 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
         0x01,                             /* 2   bDescriptorSubtype */
         0x00,                             /* 3   bmAttributes */
         0x00,                             /* 4   bmControls (Bitmap: Pitch control, over/underun etc) */
-        0x02,                             /* 5   bLockDelayUnits: Decoded PCM samples */
-        0x0008,                           /* 6:7 wLockDelay */
+        _XUA_B_LOCK_DELAY_UNITS,          /* 5   bLockDelayUnits */
+        _XUA_W_LOCK_DELAY                 /* 6:7 wLockDelay */
     },
 
 #if (NUM_USB_CHAN_IN == 0) || defined(UAC_FORCE_FEEDBACK_EP) && (XUA_SYNCMODE == XUA_SYNCMODE_ASYNC)
@@ -1611,7 +1637,7 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
 #else
     #error "Bad XUA_SYNCMODE"
 #endif
-        .wMaxPacketSize                 = HS_STREAM_FORMAT_OUTPUT_2_MAXPACKETSIZE,
+        .wMaxPacketSize                 = HS_STREAM_FORMAT_OUTPUT_2_EP_DESC_WMAXPACKETSIZE,
         .bInterval                      = 1,
     },
 
@@ -1623,8 +1649,8 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
         0x01,                             /* 2   bDescriptorSubtype */
         0x00,                             /* 3   bmAttributes */
         0x00,                             /* 4   bmControls (Bitmap: Pitch control, over/underun etc) */
-        0x02,                             /* 5   bLockDelayUnits: Decoded PCM samples */
-        0x0008,                           /* 6:7 wLockDelay */
+        _XUA_B_LOCK_DELAY_UNITS,          /* 5   bLockDelayUnits */
+        _XUA_W_LOCK_DELAY                 /* 6:7 wLockDelay */
     },
 
 #if (NUM_USB_CHAN_IN == 0) || defined(UAC_FORCE_FEEDBACK_EP) && (XUA_SYNCMODE == XUA_SYNCMODE_ASYNC)
@@ -1709,7 +1735,7 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
 #else
     #error "Bad XUA_SYNCMODE"
 #endif
-        .wMaxPacketSize                = HS_STREAM_FORMAT_OUTPUT_3_MAXPACKETSIZE,
+        .wMaxPacketSize                = HS_STREAM_FORMAT_OUTPUT_3_EP_DESC_WMAXPACKETSIZE,
         .bInterval                     = 1,
     },
 
@@ -1721,8 +1747,8 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
         .bDescriptorSubtype            = 0x01,
         .bmAttributes                  = 0x00,
         .bmControls                    = 0x00,                 /* (Bitmap: Pitch control, over/underun etc) */
-        .bLockDelayUnits               = 0x02,                 /* Decoded PCM samples */
-        .wLockDelay                    = 0x0008,
+        .bLockDelayUnits               = _XUA_B_LOCK_DELAY_UNITS,
+        .wLockDelay                    = _XUA_W_LOCK_DELAY,
     },
 
 #if (NUM_USB_CHAN_IN == 0) || defined(UAC_FORCE_FEEDBACK_EP) && (XUA_SYNCMODE == XUA_SYNCMODE_ASYNC)
@@ -1820,7 +1846,7 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
 #else
     #error "Bad XUA_SYNCMODE"
 #endif
-        .wMaxPacketSize                = HS_STREAM_FORMAT_INPUT_1_MAXPACKETSIZE,
+        .wMaxPacketSize                = HS_STREAM_FORMAT_INPUT_1_EP_DESC_WMAXPACKETSIZE,
         .bInterval                     = 0x01,
     },
 
@@ -1832,8 +1858,8 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
         .bDescriptorSubtype            = UAC_CS_ENDPOINT_SUBTYPE_EP_GENERAL,
         .bmAttributes                  = 0x00,
         .bmControls                    = 0x00,
-        .bLockDelayUnits               = 0x02,
-        .wLockDelay                    = 0x0008,
+        .bLockDelayUnits               = _XUA_B_LOCK_DELAY_UNITS,
+        .wLockDelay                    = _XUA_W_LOCK_DELAY,
     },
 #if (INPUT_FORMAT_COUNT > 1)
     /* Alternative 2 */
@@ -1896,7 +1922,7 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
 #else
     #error "Bad XUA_SYNCMODE"
 #endif
-        .wMaxPacketSize                = HS_STREAM_FORMAT_INPUT_2_MAXPACKETSIZE,
+        .wMaxPacketSize                = HS_STREAM_FORMAT_INPUT_2_EP_DESC_WMAXPACKETSIZE,
         .bInterval                     = 0x01,
     },
 
@@ -1908,8 +1934,8 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
         .bDescriptorSubtype            = UAC_CS_ENDPOINT_SUBTYPE_EP_GENERAL,
         .bmAttributes                  = 0x00,
         .bmControls                    = 0x00,
-        .bLockDelayUnits               = 0x02,
-        .wLockDelay                    = 0x0008,
+        .bLockDelayUnits               = _XUA_B_LOCK_DELAY_UNITS,
+        .wLockDelay                    = _XUA_W_LOCK_DELAY,
     },
 #endif /* (INPUT_FORMAT_COUNT > 1) */
 #if (INPUT_FORMAT_COUNT > 2)
@@ -1973,7 +1999,7 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
 #else
     #error "Bad XUA_SYNCMODE"
 #endif
-        .wMaxPacketSize                = HS_STREAM_FORMAT_INPUT_3_MAXPACKETSIZE,
+        .wMaxPacketSize                = HS_STREAM_FORMAT_INPUT_3_EP_DESC_WMAXPACKETSIZE,
         .bInterval                     = 0x01,
     },
 
@@ -1985,8 +2011,8 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
         .bDescriptorSubtype            = UAC_CS_ENDPOINT_SUBTYPE_EP_GENERAL,
         .bmAttributes                  = 0x00,
         .bmControls                    = 0x00,
-        .bLockDelayUnits               = 0x02,
-        .wLockDelay                    = 0x0008,
+        .bLockDelayUnits               = _XUA_B_LOCK_DELAY_UNITS,
+        .wLockDelay                    = _XUA_W_LOCK_DELAY,
     },
 #endif /* (INPUT_FORMAT_COUNT > 2) */
 #endif /* (NUM_USB_CHAN_IN > 0) */
@@ -2304,10 +2330,7 @@ unsigned char cfgDesc_Null[] =
  * Note, using a value of <=2 or > 7 for num_freqs_a1 causes enumeration issues on Windows.
  * To work around this we repeat MAX_FREQ_FS multiple times in some cases */
 
-#define MAX(a,b) (((a)>(b))?(a):(b))
-#define MIN(a,b) (((a)<(b))?(a):(b))
-
-const unsigned num_freqs_a1 = MAX(3, (0
+const unsigned num_freqs_a1 = XUA_MAX(3, (0
 #if(MIN_FREQ <= 8000) && (MAX_FREQ_FS >= 8000)
     + 1
 #endif
@@ -2742,17 +2765,13 @@ unsigned char cfgDesc_Audio1[] =
     #endif
 #endif
 
-    /* CS_Endpoint Descriptor ?? */
+    /* Class-Specific AS Isochronous Audio Data Endpoint Descriptor */
     0x07,
     0x25,                                 /* CS_ENDPOINT */
     0x01,                                 /* subtype - GENERAL */
     0x01,                                 /* attributes. D[0]: sample freq ctrl. */
-    0x02,                                 /* bLockDelayUnits */
-#if (XUA_SYNCMODE == XUA_SYNCMODE_ADAPT)
-    0x08, 0x00,                           /* wLockDelay */
-#else
-    0x00, 0x00,                           /* Not used */
-#endif
+    _XUA_B_LOCK_DELAY_UNITS,              /* bLockDelayUnits */
+    (_XUA_W_LOCK_DELAY & 0xFF), (_XUA_W_LOCK_DELAY >> 8) & 0xFF,  /* wLockDelay */
 
 #if (NUM_USB_CHAN_IN == 0) || defined(UAC_FORCE_FEEDBACK_EP) && (XUA_SYNCMODE == XUA_SYNCMODE_ASYNC)
     /* Feedback EP */
