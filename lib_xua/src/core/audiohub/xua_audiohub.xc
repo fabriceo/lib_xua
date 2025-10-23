@@ -46,6 +46,10 @@
 #define DEBUG_UNIT XUA_AUDIOHUB
 #include "debug_print.h"
 
+//XUA_FABRICEO_H_
+#include "audiohub_fabriceo.h"
+
+
 #define XUA_MAX(x,y) ((x)>(y) ? (x) : (y))
 
 unsigned samplesOut[XUA_MAX(NUM_USB_CHAN_OUT, I2S_CHANS_DAC)];
@@ -230,6 +234,10 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
     memset(&i2sOutUs3.delayLine, 0, sizeof i2sOutUs3.delayLine);
 #endif /* (AUD_TO_USB_RATIO > 1) */
 
+//XUA_FABRICEO_H_
+    XUA_TIMEOUT_RESET();
+    XUA_DSP_RESET();
+
     UserBufferManagementInit(curSamFreq);
 
     /* Get initial samples for first I2S output */
@@ -269,12 +277,15 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
 
         if ((I2S_CHANS_DAC > 0 || I2S_CHANS_ADC > 0))
         {
+//CHECK TIMEOUT ! or clock presence upfront
 #if CODEC_MASTER
             InitPorts_slave(p_lrclk, p_bclk, p_i2s_dac, p_i2s_adc);
 #else
             InitPorts_master(p_lrclk, p_bclk, p_i2s_dac, p_i2s_adc);
 #endif
         }
+//XUA_FABRICEO_H_
+        XUA_TIMING_RESET();
 
         /* Note we always expect syncError to be 0 when we are master */
         while(!syncError)
@@ -287,6 +298,24 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
             else
 #endif
             {
+//XUA_FABRICEO_H_
+#if defined( XUA_TIMEOUT_CHECK ) && ( XUA_TIMEOUT_CHECK == 1 )
+                asm volatile("#XUA_TIMEOUT_CHECK:");
+                timer XUA_TIMEOUT_TIMER;
+                if (XUA_TIMEOUT_RAISED == 0) {
+                    XUA_TIMEOUT_COUNT ++;
+                int timeval;
+                XUA_TIMEOUT_TIMER :> timeval;
+                timeval -= XUA_TIMEOUT_PREV;
+                if (XUA_TIMEOUT_PREV ) XUA_TIMEOUT_DELTA = timeval;
+                XUA_TIMEOUT_PREV += timeval;
+                XUA_TIMEOUT_PREV |= 1;
+                }
+                timeout_setEvent( XUA_TIMEOUT_TIMER, XUA_TIMEOUT_DELAY );
+                if ( (XUA_TIMEOUT_RAISED==0) && (timeout_running( XUA_TIMEOUT_TIMER )) )
+                {
+#endif
+
 #if (I2S_CHANS_ADC != 0)
 #if (AUD_TO_USB_RATIO > 1)
                 if (0 == audioToUsbRatioCounter)
@@ -306,7 +335,12 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
                     // p_i2s_adc[index++] :> sample;
                     // Manual IN instruction since compiler generates an extra setc per IN (bug #15256)
                     unsigned sample;
+//XUA_FABRICEO_H_
+                    if (i == 0) XUA_TIMESTAMP_LEFT_IN();
+
                     asm volatile("in %0, res[%1]" : "=r"(sample)  : "r"(p_i2s_adc[index]));
+//XUA_FABRICEO_H_
+                    if (i == 0) XUA_TIMESTAMP_LEFT_OUT();
 
                     sample = bitrev(sample);
                     if(XUA_I2S_N_BITS != 32)
@@ -341,9 +375,11 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
                     samplesIn[buffIndex][chanIndex] = sample;
 #endif /* (AUD_TO_USB_RATIO > 1) */
                 }
-#endif
+
+#endif //(I2S_CHANS_ADC != 0)
 
 #if (I2S_CHANS_ADC != 0 || I2S_CHANS_DAC != 0)
+
                 syncError += HandleSampleClock(frameCount, p_lrclk);
 #endif
 
@@ -368,11 +404,21 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
                                                                                  src_ff3v_fir_coefs[2-audioToUsbRatioCounter]);
                     }
 #endif /* (AUD_TO_USB_RATIO > 1) */
+
+//XUA_FABRICEO_H_
+#if (I2S_CHANS_ADC == 0)
+                    if (i == 0) XUA_TIMESTAMP_LEFT_IN();
+#endif
                     if(XUA_I2S_N_BITS == 32)
                         p_i2s_dac[index++] <: bitrev(samplesOut[frameCount +i]);
                     else
                         partout(p_i2s_dac[index++], XUA_I2S_N_BITS, bitrev(samplesOut[frameCount +i]));
+//XUA_FABRICEO_H_
+#if (I2S_CHANS_ADC == 0)
+                    if (i == 0) XUA_TIMESTAMP_LEFT_OUT();
+#endif
                 }
+
 #endif // (I2S_CHANS_DAC != 0)
 
             if(frameCount == 0)
@@ -437,7 +483,13 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
                 {
                     /* Manual IN instruction since compiler generates an extra setc per IN (bug #15256) */
                     unsigned sample;
+//XUA_FABRICEO_H_
+                    if (i == 0) XUA_TIMESTAMP_RIGHT_IN();
+
                     asm volatile("in %0, res[%1]" : "=r"(sample)  : "r"(p_i2s_adc[index]));
+//XUA_FABRICEO_H_
+                    if (i == 0) XUA_TIMESTAMP_RIGHT_OUT();
+
                     sample = bitrev(sample);
                     if(XUA_I2S_N_BITS != 32)
                     {
@@ -495,12 +547,29 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
                                                                                  src_ff3v_fir_coefs[2-audioToUsbRatioCounter]);
                     }
 #endif /* (AUD_TO_USB_RATIO > 1) */
+
+//XUA_FABRICEO_H_
+#if (I2S_CHANS_ADC == 0)
+                    if (i == 0) XUA_TIMESTAMP_RIGHT_IN();
+#endif
                     if(XUA_I2S_N_BITS == 32)
                         p_i2s_dac[index++] <: bitrev(samplesOut[frameCount + i]);
                     else
                         partout(p_i2s_dac[index++], XUA_I2S_N_BITS, bitrev(samplesOut[frameCount + i]));
+//XUA_FABRICEO_H_
+#if (I2S_CHANS_ADC == 0)
+                    if (i == 0) XUA_TIMESTAMP_RIGHT_OUT();
+#endif
                 }
 #endif // (I2S_CHANS_DAC != 0)
+
+//XUA_FABRICEO_H_
+#if defined( XUA_TIMEOUT_CHECK ) && ( XUA_TIMEOUT_CHECK == 1 )
+                timeout_clearAllEvents();
+                } else {
+                    if (XUA_TIMEOUT_RAISED==0) debug_printf("XUA_TIMEOUT_RAISED ! %d\n",XUA_TIMEOUT_COUNT);
+                    XUA_TIMEOUT_RAISED = 1; }
+#endif
 
             }  // !dsdMode
 
@@ -517,6 +586,15 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
                 return 0;
             }
 #endif
+//XUA_FABRICEO_H_
+#if defined( XUA_TIMEOUT_CHECK ) && ( XUA_TIMEOUT_CHECK == 1 )
+            if ( XUA_TIMEOUT_RAISED ) {
+                timer tmr;
+                //wait same time a previous loop time
+                tmr when timerafter(XUA_TIMEOUT_PREV+XUA_TIMEOUT_DELTA) :> void;
+            }
+#endif
+
 
 #if (XUA_PCM_FORMAT == XUA_PCM_FORMAT_TDM)
             /* Increase frameCount by 2 since we have output two channels (per data line) */
@@ -550,7 +628,8 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
                 /* Reset the framecount because we have outputted all channels in the frame now */
                 frameCount = 0;
             }
-        }
+
+        } //syncerror
     }
     return 0;
 }
@@ -563,7 +642,6 @@ static void receive_command(unsigned command,
                             unsigned &curSamRes_DAC,
                             unsigned &audioActive)
 {
-    debug_printf("receive_command: %d\n", command);
     if(command == XUA_AUDCTL_SET_SAMPLE_FREQ)
     {
         curSamFreq = inuint(c_aud) * AUD_TO_USB_RATIO;
@@ -578,7 +656,7 @@ static void receive_command(unsigned command,
         dsdMode = inuint(c_aud);
         curSamRes_DAC = inuint(c_aud);
         audioActive = 1;
-        debug_printf("aud stream start\n");
+        debug_printf("aud stream start dsdMode %d, curSamRes_DAC %dbits\n",dsdMode, curSamRes_DAC);
     }
     else if (command == XUA_AUD_SET_AUDIO_STOP)
     {
@@ -800,7 +878,13 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
         directly from the MCLK port. */
         /* Start the master clock-block */
         start_clock(clk_audio_mclk);
+#else
+#if defined( XUA_AUDIOHUB_TIMING ) && (XUA_AUDIOHUB_TIMING==1)
+        configure_clock_src(clk_audio_mclk, p_mclk_in);
+        start_clock(clk_audio_mclk);
+#endif
 #endif /* ((AUDIO_IO_TILE == XUD_TILE) || XUA_ADAT_TX_EN || XUA_SPDIF_TX_EN) */
+
 
         /* Perform required CODEC/ADC/DAC initialisation */
         AudioHwInit();
@@ -993,6 +1077,36 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
                     outuint(c_adat_out, adatMultiple);
                     outuint(c_adat_out, adatSmuxMode);
 #endif
+                    debug_printf("AudioHub_MainLoop()\n");
+//XUA_FABRICEO_H_
+#if (defined(XUA_AUDIOHUB_TIMING) && (XUA_AUDIOHUB_TIMING==2))
+                    //quick measure of the audio mclk input for test purpose
+                    int a; asm volatile ("in %0,res[%1]":"=r"(a):"r"(p_for_mclk_count_audio));
+                    int ts1; asm volatile ("getts %0, res[%1] #%2":"=r"(ts1):"r"(p_for_mclk_count_audio),"r"(a));
+                    delay_ticks(100); //1us
+                    int ts2; asm volatile ("getts %0, res[%1]":"=r"(ts2):"r"(p_for_mclk_count_audio));
+                    short ts = ts2 - ts1;
+                    debug_printf("clk_audio_mclk ticks = %d\n",ts);
+#endif
+
+
+//XUA_FABRICEO_H_
+#if defined(XUA_AUDIOHUB_DSP_TASKS) && ( XUA_AUDIOHUB_DSP_TASKS >= 1)
+    XUA_DSP_INIT(XUA_AUDIOHUB_DSP_TASKS);
+
+    par {
+            XUA_DSP_TASK(1);
+
+#if ( XUA_AUDIOHUB_DSP_TASKS >= 2)
+            XUA_DSP_TASK(2);
+#endif
+#if ( XUA_AUDIOHUB_DSP_TASKS >= 3)
+            XUA_DSP_TASK(3);
+#endif
+#endif //XUA_AUDIOHUB_DSP_TASKS
+        {
+//XUA_FABRICEO_H_
+                    XUA_DSP_SAVE_SYNCHRONIZER();
                     command = AudioHub_MainLoop(c_aud
 #if (XUA_SPDIF_TX_EN)
                        , c_spdif_out
@@ -1010,12 +1124,24 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
 #if (XUA_NUM_PDM_MICS > 0)
                        , c_pdm_in
 #endif
-                      , p_lrclk, p_bclk, p_i2s_dac, p_i2s_adc);
+                      , p_lrclk, p_bclk, p_i2s_dac, p_i2s_adc );
+
+#if defined(XUA_AUDIOHUB_DSP_TASKS) && ( XUA_AUDIOHUB_DSP_TASKS >= 1)
+                    XUA_DSP_KILL_ALL_TASKS(XUA_AUDIOHUB_DSP_TASKS);
+#endif
+        }
+//XUA_FABRICEO_H_
+#if defined(XUA_AUDIOHUB_DSP_TASKS) && ( XUA_AUDIOHUB_DSP_TASKS >= 1)
+    } //par
+#endif
+//XUA_FABRICEO_H_
+                    XUA_TIMING_PRINT();
 
 #if (XUA_USB_EN)
                     /* Now perform any additional inputs and update state accordingly */
                     receive_command(command, c_aud, curSamFreq, dsdMode, curSamRes_DAC, audioActive);
-#if (XUA_DFU_EN == 1)
+
+                    #if (XUA_DFU_EN == 1)
                     check_and_enter_dfu(curSamFreq, c_aud, dfuInterface);
 
 #endif /* (XUA_DFU_EN == 1) */

@@ -18,6 +18,9 @@
 #include <xscope.h>
 #endif
 
+#include "debug_print.h"
+
+
 #if XUA_USB_EN
 #include "xud_device.h"                 /* XMOS USB Device Layer defines and functions */
 #include "xua_endpoint0.h"
@@ -114,21 +117,29 @@ on tile[AUDIO_IO_TILE] : buffered out port:32 p_lrclk       = PORT_I2S_LRCLK;
 on tile[AUDIO_IO_TILE] : buffered out port:32 p_bclk        = PORT_I2S_BCLK;
 #endif
 
-#if (!CODEC_MASTER) || XUA_SPDIF_TX_EN || XUA_ADAT_TX_EN || ((AUDIO_IO_TILE == XUD_TILE) && XUA_USB_EN)
+#if (!CODEC_MASTER) || XUA_SPDIF_TX_EN || XUA_ADAT_TX_EN || ((AUDIO_IO_TILE == XUD_TILE) && XUA_USB_EN) || (XUA_EXTENSION)
 /* Audio master clock input */
 on tile[AUDIO_IO_TILE] :  in port p_mclk_in                 = PORT_MCLK_IN;
 #else
 #define p_mclk_in null
 #endif
 
+#if defined(XUD_MCLK_OUT) && (XUD_MCLK_OUT >= 1)
+#if (XUD_MCLK_OUT == 1) //mode 12.5mhz only
+on tile[XUD_TILE] : out port p_mclk_out_usb                 = PORT_MCLK_OUT_USB;
+#else //mode app_pll
+on tile[XUD_TILE] : in port p_mclk_in_usb                   = PORT_MCLK_IN_USB;
+#endif
+#else
 #if (AUDIO_IO_TILE != XUD_TILE) && XUA_USB_EN
 /* If audio I/O and USB running on different tiles we need a separate port for
  * the master clock input (to use for USB async feedback calculation) */
 on tile[XUD_TILE] : in port p_mclk_in_usb                   = PORT_MCLK_IN_USB;
 #endif
+#endif
 
 #if XUA_USB_EN
-on tile[XUD_TILE] : in port p_for_mclk_count                = PORT_MCLK_COUNT;
+on tile[XUD_TILE] : port p_for_mclk_count                   = PORT_MCLK_COUNT;
 #endif
 
 #if (XUA_SPDIF_TX_EN)
@@ -155,6 +166,10 @@ on tile[AUDIO_IO_TILE] : port p_for_mclk_count_audio        = PORT_MCLK_COUNT_2;
 #else /* __XS3A__ */
 #define p_for_mclk_count_audio                              null
 #endif /* __XS3A__ */
+#endif
+
+#if defined(XUA_TIMING_ENABLED) && (XUA_TIMING_ENABLED==1)
+on tile[AUDIO_IO_TILE] : in port p_for_mclk_count_audio        = PORT_MCLK_COUNT_2;
 #endif
 
 #ifdef MIDI
@@ -289,6 +304,7 @@ void usb_audio_io(chanend ?c_aud_in,
     , port p_for_mclk_count_aud
     , chanend c_sw_pll
 #endif
+
 )
 {
 #if (MIXER)
@@ -306,6 +322,13 @@ void usb_audio_io(chanend ?c_aud_in,
 #endif /* XUA_USE_SW_PLL */
 #endif /* (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN) */
 
+//XUA_FABRICEO_H_
+#if defined(XUA_TIMING_ENABLED) && (XUA_TIMING_ENABLED==1)
+    /* Connect p_for_mclk_count_aud to clk_audio_mclk so we can count mclks/timestamp in digital rx*/
+    unsigned x = 0;
+    asm("ldw %0, dp[clk_audio_mclk]":"=r"(x));
+    asm("setclk res[%0], %1"::"r"(p_for_mclk_count_audio), "r"(x));
+#endif
 
 #if (XUA_SPDIF_TX_EN) && (SPDIF_TX_TILE == AUDIO_IO_TILE)
     chan c_spdif_tx;
@@ -524,9 +547,32 @@ int main()
                 /* Attach mclk count port to mclk clock-block (for feedback) */
                 //set_port_clock(p_for_mclk_count, clk_audio_mclk);
 #if(AUDIO_IO_TILE != XUD_TILE)
+//XUA_FABRICEO_H_
+#if (defined(XUD_MCLK_OUT) && (XUD_MCLK_OUT >= 1))
+#if ( XUD_MCLK_OUT == 1 ) // generate 12.5mhz only
+                configure_clock_ref(clk_audio_mclk_usb,8/2);    //divide by 8 = 12.5MHZ
+                configure_port_clock_output(p_mclk_out_usb, clk_audio_mclk_usb);
+#elif ( XUD_MCLK_OUT == 2 ) // will use app_pll somewhere
+                configure_clock_src(clk_audio_mclk_usb,p_mclk_in_usb);      //assign reference clock to this clock
+#endif
+
+                set_port_clock(p_for_mclk_count, clk_audio_mclk_usb);
+                start_clock(clk_audio_mclk_usb);
+//XUA_FABRICEO_H_
+#if ( XUD_MCLK_OUT == 1 )
+                int a; asm volatile ("in %0,res[%1]":"=r"(a):"r"(p_for_mclk_count));
+                int ts1; asm volatile ("getts %0, res[%1] #%2":"=r"(ts1):"r"(p_for_mclk_count),"r"(a));
+                delay_ticks(10000); //100us
+                int ts2; asm volatile ("getts %0, res[%1]":"=r"(ts2):"r"(p_for_mclk_count));
+                short ts = ts2 - ts1;
+                debug_printf("clk_audio_mclk_usb ticks = %d\n",ts);
+#endif
+
+#else
                 set_clock_src(clk_audio_mclk_usb, p_mclk_in_usb);
                 set_port_clock(p_for_mclk_count, clk_audio_mclk_usb);
                 start_clock(clk_audio_mclk_usb);
+#endif
 #else
                 /* AUDIO_IO_TILE == XUD_TILE */
                 /* Clock port from same clock-block as I2S */

@@ -3,6 +3,15 @@
 #####################################
 lib_xua: USB Audio components library
 #####################################
+``fabriceo`` version, including optional features:
+* time measurement for one sample treatment in audiohub,
+* timeout when accessing I2S ports in case of mclk failure.
+* hooks in decouple.xc and endpoint0.c to send basic messages(queue) to user application
+* possibility to run I2S task at a different sample rate than USB host expectation. 
+* framework for launching and triggering DSP tasks within par { audiomainloop }  
+all changes in the source code are identified with //XUA_FABRICEO_H_ or //XUA_FABRICEO_H_ { and //XUA_FABRICEO_H_ }
+#####################################
+
 
 :vendor: XMOS
 :version: 5.1.0

@@ -15,6 +15,10 @@
 #include "xud.h"
 #include "xua_usb_params_funcs.h"
 
+//XUA_FABRICEO_H_
+#include "decouple_fabriceo.h"
+
+
 #ifdef NATIVE_DSD
 #include "usbaudio20.h"             /* Defines from the USB Audio 2.0 Specifications */
 #endif
@@ -657,6 +661,7 @@ static inline void SetupZerosSendBuffer(XUD_ep aud_to_host_usb_ep, unsigned samp
 
 static void check_and_signal_stream_event_to_audio(chanend c_mix_out, unsigned dsdMode, unsigned sampResOut)
 {
+
     /* We do OR logic so audio hub is sent info about whether *ANY* stream is active or not */
     g_any_stream_active_current = g_input_stream_active || g_output_stream_active;
     if(g_any_stream_active_current != g_any_stream_active_old)
@@ -791,6 +796,9 @@ void XUA_Buffer_Decouple(chanend c_mix_out
         {
             asm("#decouple-default");
 
+//XUA_FABRICEO_H_
+            XUA_DECOUPLE_CMD_TRANSFER(c_mix_out);
+
             /* Check for freq change or other update */
 
             GET_SHARED_GLOBAL(cmd, g_streamChange_flag);
@@ -802,11 +810,16 @@ void XUA_Buffer_Decouple(chanend c_mix_out
                 /* Pass on to mixer */
                 DISABLE_INTERRUPTS();
                 inuint(c_mix_out);
+
                 outct(c_mix_out, XUA_AUDCTL_SET_SAMPLE_FREQ);
                 outuint(c_mix_out, sampFreq);
 
+
                 if(sampFreq != AUDIO_STOP_FOR_DFU)
                 {
+//XUA_FABRICEO_H_
+                    XUA_DECOUPLE_AUDCTL_SET_SAMPLE_FREQ(sampFreq);
+
                     inUnderflow = 1;
                     SET_SHARED_GLOBAL(g_aud_to_host_rdptr, aud_to_host_fifo_start);
                     SET_SHARED_GLOBAL(g_aud_to_host_wrptr, aud_to_host_fifo_start);
@@ -836,7 +849,6 @@ void XUA_Buffer_Decouple(chanend c_mix_out
                     }
 #endif
                 }
-
                 /* Wait for handshake back and pass back up */
                 chkct(c_mix_out, XS1_CT_END);
 
