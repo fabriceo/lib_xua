@@ -16,7 +16,7 @@
 #include "xua_usb_params_funcs.h"
 
 //XUA_FABRICEO_H_
-#include "decouple_fabriceo.h"
+#include "../src/fabriceo/fo_decouple.h"
 
 
 #ifdef NATIVE_DSD

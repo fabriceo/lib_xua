@@ -1,19 +1,23 @@
 /*
- * decouple_fabriceo.h
+ * fo_decouple.h
  *
  *  Created on: 22 oct. 2025
  *      Author: fabrice
  */
 
-#ifndef DECOUPLE_FABRICEO_H_
-#define DECOUPLE_FABRICEO_H_
+#ifndef FO_DECOUPLE_H_
+#define FO_DECOUPLE_H_
 
-#include "xua_fabriceo.h"
+#ifdef __xua_conf_h_exists__
+    #include "xua_conf.h"
+#endif
 
 /************ DECOUPLE EXTENSIONS ***************/
 
 //test flag defined in xua_conf.h
 #if defined( XUA_DECOUPLE_AUDCTL) && ( XUA_DECOUPLE_AUDCTL == 1 )
+
+#include "fo_msg_basic.h"
 
 static inline void decouple_AUDCTL_SET_SAMPLE_FREQ(unsigned freq)  { unsafe {
     messages_t * XCUNSAFE m = messages_create();
@@ -28,9 +32,12 @@ static inline void decouple_AUDCTL_SET_SAMPLE_FREQ(unsigned freq)  { unsafe {
 
 
 #if defined( XUA_DECOUPLE_EXTRA_COMMANDS ) && ( XUA_DECOUPLE_EXTRA_COMMANDS == 1 )
+
+#include "fo_commands.h"
+
 #define XUA_DECOUPLE_CMD_TRANSFER(x) decouple_treat_command(x)
 #else
 #define XUA_DECOUPLE_CMD_TRANSFER(x) do { } while(0)
 #endif
 
-#endif /* DECOUPLE_FABRICEO_H_ */
+#endif /* FO_DECOUPLE_H_ */

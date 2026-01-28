@@ -24,6 +24,10 @@ MODULE_XCC_FLAGS = $(XCC_FLAGS) \
                    -fcomment-asm \
                     $(DEBUG_FLAGS)
 
+MODULE_XCC_CPP_FLAGS =  -std=c++11 $(MODULE_XCC_FLAGS)
+# MODULE_XCC_XC_FLAGS
+# MODULE_XCC_ASM_FLAGS
+
 # Core
 XCC_FLAGS_xua_endpoint0.c = $(MODULE_XCC_FLAGS) -Os -mno-dual-issue
 XCC_FLAGS_xua_ep0_uacreqs.xc = $(MODULE_XCC_FLAGS) -Os -mno-dual-issue
@@ -36,9 +40,13 @@ XCC_FLAGS_dfu.xc = $(MODULE_XCC_FLAGS) -Os -mno-dual-issue
 XCC_FLAGS_flash_interface.c = $(MODULE_XCC_FLAGS) -Os -mno-dual-issue
 XCC_FLAGS_flashlib_user.c = $(MODULE_XCC_FLAGS) -Os -mno-dual-issue
 
+#fabriceo
+XCC_FLAGS_dsp_app.cpp = $(MODULE_XCC_FLAGS)  -std=c++11
+
 OPTIONAL_HEADERS += xua_conf.h static_hid_report.h user_main_globals.h user_main_declarations.h user_main_cores.h
 
 EXPORT_INCLUDE_DIRS = api \
+                      src/fabriceo \
                       src/core \
                       src/core/audiohub \
                       src/core/buffer/ep \
@@ -63,6 +71,7 @@ INCLUDE_DIRS = $(EXPORT_INCLUDE_DIRS) \
                src
 
 SOURCE_DIRS = src/core \
+			  src/fabriceo \
               src/core/audiohub \
               src/core/buffer/decouple \
               src/core/buffer/ep \

@@ -1,15 +1,23 @@
 /*
- * audiohub_fabriceo.h
+ * fo_audiohub.h
  *
  *  Created on: 22 oct. 2025
  *      Author: fabriceo
+ *
+ *      collection of DEFINE or procedures used INSIDE the standard audiohub routines.
+ *      organized to be "fully transparent" if the below feature flags are not set in xua_conf.h
+ *
  */
 
 
-#ifndef AUDIOHUB_FABRICEO_H_
-#define AUDIOHUB_FABRICEO_H_
+#ifndef FO_AUDIOHUB_H_
+#define FO_AUDIOHUB_H_
 
-#include "xua_fabriceo.h"
+#ifdef __xua_conf_h_exists__
+    #include "xua_conf.h"
+#endif
+
+
 /************ AUDIOHUB EXTENSIONS ***************/
 
 //test depending on flag set in xua_audiohub.c
@@ -55,36 +63,57 @@ static void XUA_TIMING_PRINT() {
 #define XUA_TIMING_PRINT()        do { } while(0)
 #endif // XUA_AUDIOHUB_TIMING==1
 
+
+
 #if defined( XUA_TIMEOUT_CHECK ) && ( XUA_TIMEOUT_CHECK == 1 )
 
+#include "fo_timeout.h"
+
 static unsigned XUA_TIMEOUT_RAISED = 0;
-static unsigned XUA_TIMEOUT_PREV = 0;
-static unsigned XUA_TIMEOUT_DELTA = 0;
-static unsigned XUA_TIMEOUT_COUNT = 0;
-#define XUA_TIMEOUT_DELAY (PLATFORM_REFERENCE_HZ / MIN_FREQ * 2 )
-#define XUA_TIMEOUT_RESET() { XUA_TIMEOUT_RAISED = XUA_TIMEOUT_PREV = XUA_TIMEOUT_DELTA = XUA_TIMEOUT_COUNT = 0; }
+static unsigned XUA_TIMEOUT_PREV   = 0;
+static unsigned XUA_TIMEOUT_DELTA  = 0;
+static unsigned XUA_TIMEOUT_COUNT  = 0;
+#define XUA_TIMEOUT_DELAY  (PLATFORM_REFERENCE_HZ / MIN_FREQ * 2 )
+#define XUA_TIMEOUT_RESET() { \
+    XUA_TIMEOUT_RAISED = XUA_TIMEOUT_PREV = XUA_TIMEOUT_DELTA = XUA_TIMEOUT_COUNT = 0; }
 
 #else
 #define XUA_TIMEOUT_RESET() do { } while(0)
 #endif // XUA_TIMEOUT_CHECK
 
+
+
 #if defined( XUA_AUDIOHUB_DSP_TASKS ) && ( XUA_AUDIOHUB_DSP_TASKS >=1 )
 
-unsigned XUA_DSP_SYNCHRONIZER = 0;  //reflects dsp tasks running or not
-unsigned XUA_DSP_BUFF_OFS = 0;      //offset of the sample buffer used by dsptasks (A/B)
-#define XUA_DSP_SAVE_SYNCHRONIZER() asm volatile("stw r5,dp[XUA_DSP_SYNCHRONIZER]":::"memory","r5");
-#define XUA_DSP_RESET() do { asm volatile("stw %0,dp[XUA_DSP_SYNCHRONIZER]"::"r"(0)); XUA_DSP_BUFF_OFS=0; xua_dsp_reset(XUA_AUDIOHUB_DSP_TASKS); } while(0)
-#define XUA_DSP_TASK(x) while(1) { XUAFO_JOIN(xua_dsp_task_,x)(x); int s; asm volatile("ldw %0,dp[XUA_DSP_SYNCHRONIZER]":"=r"(s)); if (s==0) break;  }
+#include "fo_dsp_basic.h"
+
+extern unsigned XUA_DSP_BUFF_OFS;         //offset of the sample buffer used by dsptasks (A/B)
+
+#define XUA_DSP_SAVE_SYNCHRONIZER()     xua_dsp_save_synchronizer()
+
+#define XUA_DSP_RESET() do { \
+    xua_dsp_clear_synchronizer()  \
+    XUA_DSP_BUFF_OFS=0; \
+    xua_dsp_reset(XUA_AUDIOHUB_DSP_TASKS); } while(0)
+
+#define XUA_DSP_TASK(x) while(1) { \
+    XUA_JOIN(xua_dsp_task_,x)(&xua_dsp_head, x); \
+    int s; asm volatile("ldw %0,dp[XUA_DSP_SYNCHRONIZER]":"=r"(s)); \
+    if (s==0) break;  }
 #define XUA_DSP_KILL_ALL_TASKS(x) do { asm volatile("stw %0,dp[XUA_DSP_SYNCHRONIZER]"::"r"(0)); } while(0)
 #define XUA_DSP_INIT(x) do { xua_dsp_init(x); } while(0)
+#define XUA_DSP_TRIGGER_LEFT() xua_dsp_trigger()
+#define XUA_DSP_TRIGGER_RIGHT() do { } while(0)
 #else
 #define XUA_DSP_TASK(x)                 do { } while(0)
-#define XUA_DSP_BUFF_OFS (0)
+#define XUA_DSP_BUFF_OFS                (0)
 #define XUA_DSP_SAVE_SYNCHRONIZER()     do { } while(0)
 #define XUA_DSP_KILL_ALL_TASKS(x)       do { } while(0)
 #define XUA_DSP_INIT(x)                 do { } while(0)
 #define XUA_DSP_RESET()                 do { } while(0)
+#define XUA_DSP_TRIGGER_LEFT()          do { } while(0)
+#define XUA_DSP_TRIGGER_RIGHT()         do { } while(0)
 #endif
 
 
-#endif /* AUDIOHUB_FABRICEO_H_ */
+#endif /* FO_AUDIOHUB_H_ */

@@ -2,6 +2,9 @@ set(LIB_NAME lib_xua)
 set(LIB_VERSION 5.1.0)
 set(LIB_INCLUDES api
                  src
+                 src/fabriceo
+                 src/fabriceo/libcpp
+                 src/fabriceo/libdsp
                  src/core
                  src/core/audiohub
                  src/core/buffer/ep

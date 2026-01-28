@@ -47,7 +47,7 @@
 #include "debug_print.h"
 
 //XUA_FABRICEO_H_
-#include "audiohub_fabriceo.h"
+#include "../src/fabriceo/fo_audiohub.h"
 
 
 #define XUA_MAX(x,y) ((x)>(y) ? (x) : (y))
@@ -379,7 +379,8 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
 #endif //(I2S_CHANS_ADC != 0)
 
 #if (I2S_CHANS_ADC != 0 || I2S_CHANS_DAC != 0)
-
+//XUA_FABRICEO_H_
+                XUA_DSP_TRIGGER_LEFT();
                 syncError += HandleSampleClock(frameCount, p_lrclk);
 #endif
 
