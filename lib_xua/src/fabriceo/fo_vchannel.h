@@ -11,6 +11,22 @@
 #ifndef VCHANNEL_H_
 #define VCHANNEL_H_
 
+#ifndef VCHANNEL_SIZE
+#define VCHANNEL_SIZE 256
+#endif
+
+char vchannel_default_queue[VCHANNEL_SIZE];
+
+typedef struct {
+    int size, pin, pout, count;
+    unsigned lock; // only for senders
+    char * queue;
+} vchannel_t;
+
+typedef vchannel_t * vchannelPtr_t;
+
+vchannel_t vchannel_default;
+
 #if defined( __cplusplus )
 extern "C" {
 #endif

@@ -8,24 +8,9 @@
 #include <stdlib.h>
 #include <xs1.h>
 #include "swlock.h"
+#include "fo_vchannel.h"
 
 swlock_t vchannel_lock = SWLOCK_INITIAL_VALUE;
-
-#ifndef VCHANNEL_SIZE
-#define VCHANNEL_SIZE 256
-#endif
-
-char vchannel_default_queue[VCHANNEL_SIZE];
-
-typedef struct {
-    int size, pin, pout, count;
-    unsigned lock; // only for senders
-    char * queue;
-} vchannel_t;
-
-typedef vchannel_t * vchannelPtr_t;
-
-vchannel_t vchannel_default;
 
 void vchannel_init( vchannelPtr_t vch, char * addr, int length ) {
     swlock_acquire(&vchannel_lock);
