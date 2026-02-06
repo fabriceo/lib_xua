@@ -106,6 +106,8 @@ int dspSamplesArray[DSP_SAMPLES_ARRAY_SIZE];
 //defined in dsp_base
 void dspbaseBufferInit(uint32_t sampFreq);  
 
+#if 0
+
 extern "C" void UserBufferManagement(unsigned sampsFromUsbToAudio[], unsigned sampsFromAudioToUsb[]) {
     //called in between transfer from/to usb
     //possibility to trigger DSP here but need to verify/avoid jitter from  audiohub_st.xc
@@ -129,7 +131,7 @@ extern "C" void UserBufferManagementInit(unsigned sampFreq) {
     memset( &dspSamplesArray, 0, sizeof(dspSamplesArray));
     dspbaseBufferInit(sampFreq);
 }
-
+#endif
 
 //gives the possibility to define an Input or Output located in our local samples array.
 //input area is buffered so it is possible to retreive previous samples to allign core timing

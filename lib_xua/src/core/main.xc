@@ -550,14 +550,14 @@ int main()
 //XUA_FABRICEO_H_
 #if (defined(XUD_MCLK_OUT) && (XUD_MCLK_OUT >= 1))
 #if ( XUD_MCLK_OUT == 1 ) // generate 12.5mhz only
-                configure_clock_ref(clk_audio_mclk_usb,8/2);    //divide by 8 = 12.5MHZ
-                configure_port_clock_output(p_mclk_out_usb, clk_audio_mclk_usb);
+                //clk_audio_mclk_usb used to generate a frequency
+                configure_clock_ref( clk_audio_mclk_usb, 8/2);    //divide by 8 = 12.5MHZ
+                configure_port_clock_output( p_mclk_out_usb, clk_audio_mclk_usb );
 #elif ( XUD_MCLK_OUT == 2 ) // will use app_pll somewhere
-                configure_clock_src(clk_audio_mclk_usb,p_mclk_in_usb);      //assign reference clock to this clock
+                configure_clock_src( clk_audio_mclk_usb, p_mclk_in_usb);      //assign reference clock to this clock
 #endif
-
-                set_port_clock(p_for_mclk_count, clk_audio_mclk_usb);
-                start_clock(clk_audio_mclk_usb);
+                set_port_clock( p_for_mclk_count, clk_audio_mclk_usb );
+                start_clock( clk_audio_mclk_usb );
 //XUA_FABRICEO_H_
 #if ( XUD_MCLK_OUT == 1 )
                 int a; asm volatile ("in %0,res[%1]":"=r"(a):"r"(p_for_mclk_count));
@@ -565,7 +565,7 @@ int main()
                 delay_ticks(10000); //100us
                 int ts2; asm volatile ("getts %0, res[%1]":"=r"(ts2):"r"(p_for_mclk_count));
                 short ts = ts2 - ts1;
-                debug_printf("clk_audio_mclk_usb ticks = %d\n",ts);
+                debug_printf("p_for_mclk_count on usb tile 100us count = %dticks\n",ts);
 #endif
 
 #else
