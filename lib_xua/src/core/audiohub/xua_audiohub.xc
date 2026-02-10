@@ -52,7 +52,10 @@
 
 #define XUA_MAX(x,y) ((x)>(y) ? (x) : (y))
 
-unsigned samplesOut[XUA_MAX(NUM_USB_CHAN_OUT, I2S_CHANS_DAC)];
+//XUA_FABRICEO_H_
+#define OUT_CHAN_COUNT (I2S_CHANS_DAC + (8*XUA_ADAT_TX_EN) + (2*XUA_SPDIF_TX_EN))
+
+unsigned samplesOut[XUA_MAX(NUM_USB_CHAN_OUT, OUT_CHAN_COUNT)];
 
 /* Two buffers for ADC data to allow for DAC and ADC I2S ports being offset */
 #define IN_CHAN_COUNT (I2S_CHANS_ADC + XUA_NUM_PDM_MICS + (8*XUA_ADAT_RX_EN) + (2*XUA_SPDIF_RX_EN))
