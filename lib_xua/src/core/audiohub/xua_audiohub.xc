@@ -70,6 +70,15 @@ extern buffered out port:32 p_adat_tx;
 extern clock    clk_mst_spd;
 #endif
 
+//XUA_FABRICEO_H_
+#ifdef I2S_EXTRA_LRCLK
+extern buffered out port:32 I2S_EXTRA_LRCLK ;
+#endif
+#ifdef I2S_EXTRA_BCLK
+extern out port I2S_EXTRA_BCLK ;
+#endif
+
+
 #if CODEC_MASTER
 void InitPorts_slave
 #else
@@ -340,15 +349,14 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
                     unsigned sample;
 //XUA_FABRICEO_H_
                     if (i == 0) XUA_TIMESTAMP_LEFT_IN();
-
-                    asm volatile("in %0, res[%1]" : "=r"(sample)  : "r"(p_i2s_adc[index]));
+                    if (index != I2S_WIRE_EXCLUDE) asm volatile("in %0, res[%1]" : "=r"(sample)  : "r"(p_i2s_adc[index]));
 //XUA_FABRICEO_H_
                     if (i == 0) XUA_TIMESTAMP_LEFT_OUT();
 
                     sample = bitrev(sample);
                     if(XUA_I2S_N_BITS != 32)
                     {
-                        set_port_shift_count(p_i2s_adc[index], XUA_I2S_N_BITS);
+                        if (index != I2S_WIRE_EXCLUDE) set_port_shift_count(p_i2s_adc[index], XUA_I2S_N_BITS);
                         sample <<= (32 - XUA_I2S_N_BITS);
                     }
                     index++;
@@ -413,10 +421,12 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
 #if (I2S_CHANS_ADC == 0)
                     if (i == 0) XUA_TIMESTAMP_LEFT_IN();
 #endif
+                    if (index != I2S_WIRE_EXCLUDE) {
                     if(XUA_I2S_N_BITS == 32)
                         p_i2s_dac[index++] <: bitrev(samplesOut[frameCount +i]);
                     else
                         partout(p_i2s_dac[index++], XUA_I2S_N_BITS, bitrev(samplesOut[frameCount +i]));
+                    }
 //XUA_FABRICEO_H_
 #if (I2S_CHANS_ADC == 0)
                     if (i == 0) XUA_TIMESTAMP_LEFT_OUT();
@@ -489,15 +499,14 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
                     unsigned sample;
 //XUA_FABRICEO_H_
                     if (i == 0) XUA_TIMESTAMP_RIGHT_IN();
-
-                    asm volatile("in %0, res[%1]" : "=r"(sample)  : "r"(p_i2s_adc[index]));
+                    if (index != I2S_WIRE_EXCLUDE) asm volatile("in %0, res[%1]" : "=r"(sample)  : "r"(p_i2s_adc[index]));
 //XUA_FABRICEO_H_
                     if (i == 0) XUA_TIMESTAMP_RIGHT_OUT();
 
                     sample = bitrev(sample);
                     if(XUA_I2S_N_BITS != 32)
                     {
-                        set_port_shift_count(p_i2s_adc[index], XUA_I2S_N_BITS);
+                        if (index != I2S_WIRE_EXCLUDE) set_port_shift_count(p_i2s_adc[index], XUA_I2S_N_BITS);
                         sample <<= (32 - XUA_I2S_N_BITS);
                     }
                     index++;
@@ -556,10 +565,12 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
 #if (I2S_CHANS_ADC == 0)
                     if (i == 0) XUA_TIMESTAMP_RIGHT_IN();
 #endif
+                    if (index != I2S_WIRE_EXCLUDE) {
                     if(XUA_I2S_N_BITS == 32)
                         p_i2s_dac[index++] <: bitrev(samplesOut[frameCount + i]);
                     else
                         partout(p_i2s_dac[index++], XUA_I2S_N_BITS, bitrev(samplesOut[frameCount + i]));
+                    }
 //XUA_FABRICEO_H_
 #if (I2S_CHANS_ADC == 0)
                     if (i == 0) XUA_TIMESTAMP_RIGHT_OUT();
