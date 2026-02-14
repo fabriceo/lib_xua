@@ -177,6 +177,11 @@ static inline int HandleSampleClock(int frameCount, buffered _XUA_CLK_DIR port:3
 
 }
 
+//XUA_FABRICEO_H_
+unsigned spdifDivider;      //in case sampFreq > 192k we divide freq before sending to spdif
+unsigned spdifFreqCount;    //counter for this
+
+
 #pragma unsafe arrays
 unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
 #if (XUA_ADAT_TX_EN)
@@ -349,7 +354,8 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
                     unsigned sample;
 //XUA_FABRICEO_H_
                     if (i == 0) XUA_TIMESTAMP_LEFT_IN();
-                    if (index != I2S_WIRE_EXCLUDE) asm volatile("in %0, res[%1]" : "=r"(sample)  : "r"(p_i2s_adc[index]));
+                    //if (index != I2S_WIRE_EXCLUDE) 
+                    asm volatile("in %0, res[%1]" : "=r"(sample)  : "r"(p_i2s_adc[index]));
 //XUA_FABRICEO_H_
                     if (i == 0) XUA_TIMESTAMP_LEFT_OUT();
 
@@ -467,8 +473,15 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
                 outuint(c_dig_rx, 0);
 #endif
 #if (XUA_SPDIF_TX_EN) && (NUM_USB_CHAN_OUT > 0)
-                outuint(c_spd_out, samplesOut[SPDIF_TX_INDEX]);  /* Forward samples to S/PDIF Tx thread */
-                outuint(c_spd_out, samplesOut[SPDIF_TX_INDEX + 1]);
+//XUA_FABRICEO_H_
+                if (spdifFreqCount==0) {
+                    outuint(c_spd_out, samplesOut[SPDIF_TX_INDEX]);  /* Forward samples to S/PDIF Tx thread */
+                    outuint(c_spd_out, samplesOut[SPDIF_TX_INDEX + 1]);
+                }
+                if (spdifDivider) {
+                    if (spdifFreqCount==0) spdifFreqCount=spdifDivider;
+                    spdifFreqCount--;
+                }
 #endif
 
 #if (XUA_NUM_PDM_MICS > 0)
@@ -903,7 +916,8 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
 
         /* Perform required CODEC/ADC/DAC initialisation */
         AudioHwInit();
-
+//XUA_FABRICEO_H_
+        spdifDivider=0;
         /* Only break this loop if LP non streaming enabled and streams are both Alt 0 */
         while((XUA_LOW_POWER_NON_STREAMING == 0) || audioActive)
         {
@@ -1074,9 +1088,20 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
                 {
 #if (XUA_SPDIF_TX_EN)
                     /* Communicate master clock and sample freq to S/PDIF thread */
+//XUA_FABRICEO_H_
                     outct(c_spdif_out, XS1_CT_END);
-                    outuint(c_spdif_out, curSamFreq);
+                    if(curSamFreq > 192000) {
+                        if(curSamFreq > 384000) spdifDivider=4;
+                        else spdifDivider=2;
+                        outuint(c_spdif_out, 192000);
+                    } else {
+                        outuint(c_spdif_out, curSamFreq);
+                        spdifDivider=0;
+                    }
                     outuint(c_spdif_out, mClk);
+                    spdifFreqCount = 0;
+
+
 #endif
 
 #if (XUA_ADAT_TX_EN)

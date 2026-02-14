@@ -2,7 +2,7 @@
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #include "xua.h"
 #include "dsd_support.h"
-
+#include "debug_print.h"
 #if (DSD_CHANS_DAC != 0)
 extern buffered out port:32 p_dsd_dac[DSD_CHANS_DAC];
 extern buffered out port:32 p_dsd_clk;
@@ -41,7 +41,8 @@ void InitPorts_master(buffered _XUA_CLK_DIR port:32 p_lrclk, buffered _XUA_CLK_D
 #if (I2S_CHANS_ADC != 0)
         for(int i = 0; i < I2S_WIRES_ADC; i++)
         {
-            if (i != I2S_WIRE_EXCLUDE) clearbuf(p_i2s_adc[i]);
+            //if (i != I2S_WIRE_EXCLUDE) 
+            clearbuf(p_i2s_adc[i]);
         }
 #endif
 
@@ -81,7 +82,8 @@ void InitPorts_master(buffered _XUA_CLK_DIR port:32 p_lrclk, buffered _XUA_CLK_D
 #if (I2S_CHANS_ADC != 0)
         for(int i = 0; i < I2S_WIRES_ADC; i++)
         {
-        if (i != I2S_WIRE_EXCLUDE) {
+        if (i != I2S_WIRE_EXCLUDE) 
+        {
             asm("setpt res[%0], %1"::"r"(p_i2s_adc[i]),"r"(tmp-1));
 
             if(XUA_I2S_N_BITS != 32)
@@ -106,7 +108,11 @@ void InitPorts_slave(buffered _XUA_CLK_DIR port:32 p_lrclk, buffered _XUA_CLK_DI
 {
 #if (I2S_CHANS_ADC != 0 || I2S_CHANS_DAC != 0)
     unsigned tmp;
-
+    for(int i = 0; i < I2S_WIRES_ADC; i++) {
+        asm volatile("setc res[%0],%1"::"r"(p_i2s_adc[i]),"r"(XS1_SETC_INUSE_ON));//SETPSC
+        asm volatile("setc res[%0],%1"::"r"(p_i2s_adc[i]),"r"(XS1_SETC_BUF_BUFFERS));//SETPSC
+        asm volatile("settw res[%0],%1"::"r"(p_i2s_adc[i]),"r"(32));//SETPSC
+    }
     /* Wait for LRCLK edge (in I2S LRCLK = 0 is left, TDM rising edge is start of frame) */
     p_lrclk when pinseq(0) :> void;
     p_lrclk when pinseq(1) :> void;
@@ -127,7 +133,8 @@ void InitPorts_slave(buffered _XUA_CLK_DIR port:32 p_lrclk, buffered _XUA_CLK_DI
 #pragma loop unroll
     for(int i = 0; i < I2S_WIRES_DAC; i++)
     {
-    if (i != I2S_WIRE_EXCLUDE) {
+    if (i != I2S_WIRE_EXCLUDE) 
+    {
         if(XUA_I2S_N_BITS == 32)
             p_i2s_dac[i] @ tmp <: 0;
         else
@@ -140,7 +147,8 @@ void InitPorts_slave(buffered _XUA_CLK_DIR port:32 p_lrclk, buffered _XUA_CLK_DI
 #pragma loop unroll
     for(int i = 0; i < I2S_WIRES_ADC; i++)
     {
-    if (i != I2S_WIRE_EXCLUDE) {
+    if (i != I2S_WIRE_EXCLUDE) 
+    {
         asm("setpt res[%0], %1"::"r"(p_i2s_adc[i]),"r"(tmp-1));
         if(XUA_I2S_N_BITS != 32)
             set_port_shift_count(p_i2s_adc[i], XUA_I2S_N_BITS);
