@@ -2,7 +2,7 @@
 // This Software is subject to the terms of the XMOS Public Licence: Version 1.
 #ifndef __interrupt_h__
 #define __interrupt_h__
-
+//XUA_FABRICEO introducing _time and _max
 #define store_args0(c) \
   asm("kentsp 20; stw %0, sp[1]; krestsp 20"::"r"(c));
 
@@ -43,6 +43,8 @@
 #define save_state(f,args)                         \
   ".linkset __"#f"_handler_r0_save, "#args"+12\n"   \
   "stw r0, sp[" "__"#f"_handler_r0_save" "]\n" \
+  "gettime r0\n" \
+  "stw r0, dp[__"#f"_time]\n" \
   ".linkset __"#f"_handler_r1_save, "#args"+13\n"   \
   "stw r1, sp[" "__"#f"_handler_r1_save" "]\n" \
   ".linkset __"#f"_handler_r2_save, "#args"+2\n"   \
@@ -55,12 +57,20 @@
   "stw lr, sp[" "__"#f"_handler_lr_save" "]\n"
 
 #define restore_state(f,args)                  \
-  "ldw r0, sp[" "__"#f"_handler_r0_save" "]\n" \
-  "ldw r1, sp[" "__"#f"_handler_r1_save" "]\n" \
   "ldw r2, sp[" "__"#f"_handler_r2_save" "]\n" \
   "ldw r3, sp[" "__"#f"_handler_r3_save" "]\n" \
   "ldw r11, sp[" "__"#f"_handler_r11_save" "]\n" \
-  "ldw lr, sp[" "__"#f"_handler_lr_save" "]\n"
+  "ldw lr, sp[" "__"#f"_handler_lr_save" "]\n" \
+  "ldw r1,dp[__"#f"_time]\n"\
+  "gettime r0\n" \
+  "sub r0,r0,r1\n"\
+  "ldw r1,dp[__"#f"_max]\n"\
+  "lss r1,r1,r0\n" \
+  "bf r1,__"#f"_lbl\n"\
+  "stw r0,dp[__"#f"_max]\n"\
+  "__"#f"_lbl:\n"\
+  "ldw r0, sp[" "__"#f"_handler_r0_save" "]\n" \
+  "ldw r1, sp[" "__"#f"_handler_r1_save" "]\n"
 
 
 #define STRINGIFY0(x) #x
@@ -95,11 +105,17 @@
 #define register_interrupt_handler(f, args, nstackwords) \
   asm (" .section .dp.data,       \"adw\", @progbits\n"  \
        " .globl __" #f "_kernel_stack_end\n" \
+       " .globl __" #f "_time\n" \
+       " .globl __" #f "_max\n" \
        " .globl __" #f "_handler\n" \
-       " .align 8\n"                                    \
+       " .align 8\n"                \
        "__" #f "_kernel_stack:\n" \
        " .space "  #nstackwords ", 0\n" \
        "__" #f "_kernel_stack_end:\n" \
+        " .space 4\n"\
+       "__" #f "_time:\n" \
+       " .space 4\n"\
+       "__" #f "_max:\n" \
        " .space 4\n"\
        " .text\n");                             \
       do_interrupt_handler(f, args)

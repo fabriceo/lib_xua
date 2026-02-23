@@ -37,6 +37,9 @@ unsigned g_speed = (XUA_USB_BUS_SPEED == 2) ? (DEFAULT_FREQ/8000) << 16 : (DEFAU
 unsigned g_streamChangeOngoing = 0; /* Not cleared until audio has completed it's SR change. This can be used for logic that needs to know audio has completed the command */
 unsigned g_feedbackValid = 0;
 
+//XUA_FABRICEO
+unsigned long long mclkTimestamp;
+
 #if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN)
 /* When digital Rx enabled we enable an interrupt EP to inform host about changes in clock validity */
 /* Interrupt EP report data */
@@ -600,6 +603,11 @@ void XUA_Buffer_Ep(
 #else
                 /* Get MCLK count */
                 asm volatile(" getts %0, res[%1]" : "=r" (u_tmp) : "r" (p_off_mclk));
+//XUA_FABRICEO begin
+                int timestamp;
+                asm volatile("gettime %0" : "=r"(timestamp));
+                asm volatile("std %0,%1,%2[0]"::"r"(timestamp),"r"(u_tmp),"r"(&mclkTimestamp));
+//XUA_FABRICEO end
 #endif
                 /* The time we base feedback on will be invalid until we get 2 SOF's */
                 /* Additionally whilst the SR is being changed we could get some invalid values due to clocks being changed etc */

@@ -20,8 +20,6 @@
 
 /************ AUDIOHUB EXTENSIONS ***************/
 
-//test depending on flag set in xua_audiohub.c
-extern port p_for_mclk_count_audio;      //declared in lib_xua/main.xc (line about 165+172)
 
 //test depending on feature allowed or not in xua_conf.h
 #if defined( XUA_AUDIOHUB_TIMING ) && (XUA_AUDIOHUB_TIMING==1)
@@ -51,7 +49,7 @@ static int xua_timing_max[2];       //maximum values since deliver loop started
                              asm volatile("gettime %0":"=r"(xua_timestamp_right)); }
 
 static void XUA_TIMING_PRINT() {
-    debug_printf("cycle = %4d, left = %4d (%4d), right = %d (%d)\n",xua_timing_cycle,xua_timing[0],xua_timing_max[0],xua_timing[1],xua_timing_max[1]);
+    debug_printf("TIMING : cycle = %4d, left = %4d (%4d), right = %d (%d)\n",xua_timing_cycle,xua_timing[0],xua_timing_max[0],xua_timing[1],xua_timing_max[1]);
 }
 
 #else
