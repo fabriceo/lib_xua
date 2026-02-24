@@ -48,8 +48,8 @@ static int xua_timing_max[2];       //maximum values since deliver loop started
 #define XUA_TIMING_RESET() { xua_timing[0] = xua_timing[1] = xua_timing_max[0] = xua_timing_max[1] = 0; \
                              asm volatile("gettime %0":"=r"(xua_timestamp_right)); }
 
-static void XUA_TIMING_PRINT() {
-    debug_printf("TIMING : cycle = %4d, left = %4d (%4d), right = %d (%d)\n",xua_timing_cycle,xua_timing[0],xua_timing_max[0],xua_timing[1],xua_timing_max[1]);
+static void XUA_TIMING_PRINT(unsigned _fs) {
+    debug_printf("TIMING at %d : cycle = %4d, left = %4d (%4d), right = %d (%d)\n",_fs,xua_timing_cycle,xua_timing[0],xua_timing_max[0],xua_timing[1],xua_timing_max[1]);
 }
 
 #else

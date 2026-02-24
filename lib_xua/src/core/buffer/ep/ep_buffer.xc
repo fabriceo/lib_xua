@@ -38,7 +38,7 @@ unsigned g_streamChangeOngoing = 0; /* Not cleared until audio has completed it'
 unsigned g_feedbackValid = 0;
 
 //XUA_FABRICEO
-unsigned long long mclkTimestamp;
+unsigned long long SOFtimestamp;    //contains p_for_mclk and gettime at each SOF (WIP)
 
 #if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN)
 /* When digital Rx enabled we enable an interrupt EP to inform host about changes in clock validity */
@@ -606,7 +606,7 @@ void XUA_Buffer_Ep(
 //XUA_FABRICEO begin
                 int timestamp;
                 asm volatile("gettime %0" : "=r"(timestamp));
-                asm volatile("std %0,%1,%2[0]"::"r"(timestamp),"r"(u_tmp),"r"(&mclkTimestamp));
+                asm volatile("std %0,%1,%2[0]"::"r"(timestamp),"r"(u_tmp),"r"(&SOFtimestamp));
 //XUA_FABRICEO end
 #endif
                 /* The time we base feedback on will be invalid until we get 2 SOF's */

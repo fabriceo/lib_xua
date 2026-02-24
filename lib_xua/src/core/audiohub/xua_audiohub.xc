@@ -1175,7 +1175,7 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
     } //par
 #endif
 //XUA_FABRICEO_H_
-                    XUA_TIMING_PRINT();
+                    XUA_TIMING_PRINT(curSamFreq);
 
 #if (XUA_USB_EN)
                     /* Now perform any additional inputs and update state accordingly */
