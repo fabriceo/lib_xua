@@ -948,6 +948,8 @@ void XUA_Buffer_Ep(
 #endif /* (XUA_USE_SW_PLL) */
 #endif /* (XUA_SYNCMODE == XUA_SYNCMODE_SYNC) */
 
+            //default: asm volatile("nop"); break;
+
 #if (0 < HID_CONTROLS)
             default:
                 if (!hid_ready_flag)
