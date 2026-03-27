@@ -40,7 +40,7 @@ int VendorRequests(XUD_ep ep0_out, XUD_ep ep0_in,  REFERENCE_PARAM(USB_SetupPack
         // Host to device
         // get buffer associated with request
         if (sp->wLength) {
-            if ((xudres = XUD_GetBuffer(ep0_out, vendorBuf, vendorLength)) != XUD_RES_OKAY) {
+            if ((xudres = XUD_GetBuffer(ep0_out, vendorBuf, &vendorLength)) != XUD_RES_OKAY) {
                 printf("VendorRequest XUD_GetBuffer error %d\n",xudres);
                 return XUD_RES_ERR;
             }
@@ -51,15 +51,15 @@ int VendorRequests(XUD_ep ep0_out, XUD_ep ep0_in,  REFERENCE_PARAM(USB_SetupPack
     switch( sp->bRequest ) {
 
         case VENDOR_TEST1: {
-            printf("TEST2\n");
+            printf("H2D TEST1\n");
             result = XUD_RES_OKAY;
         } break;
 
         case VENDOR_TEST2: {
-            printf("TEST2\n");
-            result = XUD_RES_OKAY;
+            printf("D2H TEST2\n");
             vendorBuf[0] = 0x78; vendorBuf[1] = 0x56; vendorBuf[2] = 0x34; vendorBuf[3] = 0x12;
             vendorLength = 4;
+            result = XUD_RES_OKAY;
         } break;
     }
 

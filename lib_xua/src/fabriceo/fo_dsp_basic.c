@@ -11,6 +11,7 @@
 #include <xs1.h>
 #include <string.h>
 #include "fo_helpers.h"
+
 #include "fo_dsp_basic.h"
 
 //default structure for handling dsp task start/sync/stop within xua_audiohub
@@ -33,21 +34,11 @@ void xua_dsp_reset(unsigned n) { xua_dsp_init_(n); }
 void xua_dsp_init(unsigned n)  __attribute__ ((weak));
 void xua_dsp_init(unsigned n) { xua_dsp_init_(n); }
 
-//placeholder for dsptasks. should be replaced by user program
-#ifndef xua_dsp_task
-#define xua_dsp_task(x) xua_dsp_task_(x)
-#endif
 
-#ifndef xua_dsp_trigger
-#define xua_dsp_trigger() xua_dsp_trigger_()
-#endif
+void xua_dsp_core_(const unsigned n) __attribute__ ((weak));
+void xua_dsp_core_(const unsigned n) {  }
 
-
-void xua_dsp_task_core(unsigned x)  __attribute__ ((weak));
-void xua_dsp_task_core(unsigned x) {
-    asm volatile("nop #nothing!");
-}
-
+void xua_dsp_task_(const unsigned x) __attribute__ ((weak));
 void xua_dsp_task_(const unsigned x) {
     asm volatile("#xua_dsp_task_:");
     //sequences below are fully optimized for maximizing performance inside while (1) loop
@@ -57,28 +48,38 @@ void xua_dsp_task_(const unsigned x) {
     xua_dsp_head.tcb[x].time = 0;
     xua_dsp_head.running._8[x] = 0;
     while (1) {
+        //wait for master task to trigger us
         asm volatile("ssync":::"memory");
+        //check if we are supposed to finish our task
         if (xua_dsp_head.runable._8[x] == 0) break;
-        xua_dsp_task_core(x);
+        //launch the formal dsp core content
+        xua_dsp_core(x);
+        //clear our local flag to show master taht we are finished
         xua_dsp_head.running._8[x] = 0;
+        //compute and store completion time
         xua_dsp_head.tcb[x].time = gettime() - xua_dsp_timestart;
     }
+    //special value to show the task is finished and will not re-enter
     xua_dsp_head.tcb[x].time = 3;
 }
 
+unsigned xua_dsp_trigger_() __attribute__ ((weak));
 unsigned xua_dsp_trigger_() {
     asm volatile("#xua_dsp_trigger_:");
     int sync = xua_dsp_get_synchronizer();
     if(sync) {
         int time = gettime();
         xua_dsp_head.runlast = xua_dsp_head.running;
+        //check if a dsp tasks is not finished, then do not trigger a next cycle yet.
         if (xua_dsp_head.runlast._64) { return (unsigned)&xua_dsp_head.runlast._64; }
+        //trigger all tasks registered against our synchronizer
         asm volatile("msync res[%0]"::"r"(sync));
         xua_dsp_timestart = time;
         xua_dsp_head.running = xua_dsp_head.runable;
     }
     return 0;
 }
+
 
 void xua_dsp_task_1(const unsigned n)  __attribute__ ((weak));
 void xua_dsp_task_1(const unsigned n) { xua_dsp_task(1); }
@@ -94,4 +95,3 @@ void xua_dsp_task_6(const unsigned n)  __attribute__ ((weak));
 void xua_dsp_task_6(const unsigned n) { xua_dsp_task(6); }
 void xua_dsp_task_7(const unsigned n)  __attribute__ ((weak));
 void xua_dsp_task_7(const unsigned n) { xua_dsp_task(7); }
-

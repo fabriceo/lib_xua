@@ -398,6 +398,7 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
 #if (I2S_CHANS_ADC != 0 || I2S_CHANS_DAC != 0)
 //XUA_FABRICEO_H_
                 XUA_DSP_TRIGGER_LEFT();
+
                 syncError += HandleSampleClock(frameCount, p_lrclk);
 #endif
 
@@ -1142,6 +1143,18 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
 #endif
 #if ( XUA_AUDIOHUB_DSP_TASKS >= 3)
             XUA_DSP_TASK(3);
+#endif
+#if ( XUA_AUDIOHUB_DSP_TASKS >= 4)
+            XUA_DSP_TASK(4);
+#endif
+#if ( XUA_AUDIOHUB_DSP_TASKS >= 5)
+            XUA_DSP_TASK(5);
+#endif
+#if ( XUA_AUDIOHUB_DSP_TASKS >= 6)
+            XUA_DSP_TASK(6);
+#endif
+#if ( XUA_AUDIOHUB_DSP_TASKS >= 7)
+            XUA_DSP_TASK(7);
 #endif
 #endif //XUA_AUDIOHUB_DSP_TASKS
         {

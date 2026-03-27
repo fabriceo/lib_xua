@@ -17,13 +17,17 @@
     #include "xua_conf.h"
 #endif
 
+#ifdef __debug_conf_h_exists__
+    #include "debug_conf.h"
+#endif
+
+
 
 /************ AUDIOHUB EXTENSIONS ***************/
 
 
 //test depending on feature allowed or not in xua_conf.h
 #if defined( XUA_AUDIOHUB_TIMING ) && (XUA_AUDIOHUB_TIMING==1)
-//this is only relevant if we do printing
 
 static int xua_timestamp_left;      //timer value after getting ADC or DAC written
 static int xua_timestamp_right;     //timer value after getting ADC or DAC written
@@ -49,7 +53,9 @@ static int xua_timing_max[2];       //maximum values since deliver loop started
                              asm volatile("gettime %0":"=r"(xua_timestamp_right)); }
 
 static void XUA_TIMING_PRINT(unsigned _fs) {
+#if defined(DEBUG_PRINT_ENABLE) && (DEBUG_PRINT_ENABLE > 0)
     debug_printf("TIMING at %d : cycle = %4d, left = %4d (%4d), right = %d (%d)\n",_fs,xua_timing_cycle,xua_timing[0],xua_timing_max[0],xua_timing[1],xua_timing_max[1]);
+#endif
 }
 
 #else
@@ -60,7 +66,6 @@ static void XUA_TIMING_PRINT(unsigned _fs) {
 #define XUA_TIMING_RESET()        do { } while(0)
 #define XUA_TIMING_PRINT()        do { } while(0)
 #endif // XUA_AUDIOHUB_TIMING==1
-
 
 
 #if defined( XUA_TIMEOUT_CHECK ) && ( XUA_TIMEOUT_CHECK == 1 )
@@ -85,23 +90,21 @@ static unsigned XUA_TIMEOUT_COUNT  = 0;
 
 #include "fo_dsp_basic.h"
 
-extern unsigned XUA_DSP_BUFF_OFS;         //offset of the sample buffer used by dsptasks (A/B)
+extern unsigned XUA_DSP_BUFF_OFS;       //offset of the sample buffer used by dsptasks (A/B)
 
 #define XUA_DSP_SAVE_SYNCHRONIZER()     xua_dsp_save_synchronizer()
 
 #define XUA_DSP_RESET() do { \
-    xua_dsp_clear_synchronizer()  \
+    xua_dsp_clear_synchronizer();  \
     XUA_DSP_BUFF_OFS=0; \
     xua_dsp_reset(XUA_AUDIOHUB_DSP_TASKS); } while(0)
 
-#define XUA_DSP_TASK(x) while(1) { \
-    XUA_JOIN(xua_dsp_task_,x)(&xua_dsp_head, x); \
-    int s; asm volatile("ldw %0,dp[XUA_DSP_SYNCHRONIZER]":"=r"(s)); \
-    if (s==0) break;  }
-#define XUA_DSP_KILL_ALL_TASKS(x) do { asm volatile("stw %0,dp[XUA_DSP_SYNCHRONIZER]"::"r"(0)); } while(0)
-#define XUA_DSP_INIT(x) do { xua_dsp_init(x); } while(0)
-#define XUA_DSP_TRIGGER_LEFT() xua_dsp_trigger()
-#define XUA_DSP_TRIGGER_RIGHT() do { } while(0)
+#define XUA_DSP_TASK(x)                 xua_dsp_task(x)
+
+#define XUA_DSP_KILL_ALL_TASKS(x)       xua_dsp_clear_synchronizer();
+#define XUA_DSP_INIT(x)                 xua_dsp_init(x);
+#define XUA_DSP_TRIGGER_LEFT()          xua_dsp_trigger()
+#define XUA_DSP_TRIGGER_RIGHT()         do { } while(0)
 #else
 #define XUA_DSP_TASK(x)                 do { } while(0)
 #define XUA_DSP_BUFF_OFS                (0)
