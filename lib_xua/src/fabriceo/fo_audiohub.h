@@ -18,10 +18,10 @@
 #endif
 
 #ifdef __debug_conf_h_exists__
-    #include "debug_conf.h"
+    #include "debug_print.h"
 #endif
 
-
+extern unsigned dummyCounter;
 
 /************ AUDIOHUB EXTENSIONS ***************/
 
@@ -53,7 +53,7 @@ static int xua_timing_max[2];       //maximum values since deliver loop started
                              asm volatile("gettime %0":"=r"(xua_timestamp_right)); }
 
 static void XUA_TIMING_PRINT(unsigned _fs) {
-#if defined(DEBUG_PRINT_ENABLE) && (DEBUG_PRINT_ENABLE > 0)
+#ifdef __debug_conf_h_exists__
     debug_printf("TIMING at %d : cycle = %4d, left = %4d (%4d), right = %d (%d)\n",_fs,xua_timing_cycle,xua_timing[0],xua_timing_max[0],xua_timing[1],xua_timing_max[1]);
 #endif
 }
@@ -64,7 +64,7 @@ static void XUA_TIMING_PRINT(unsigned _fs) {
 #define XUA_TIMESTAMP_RIGHT_IN()  do { } while(0)
 #define XUA_TIMESTAMP_RIGHT_OUT() do { } while(0)
 #define XUA_TIMING_RESET()        do { } while(0)
-#define XUA_TIMING_PRINT()        do { } while(0)
+#define XUA_TIMING_PRINT(fs)      do { } while(0)
 #endif // XUA_AUDIOHUB_TIMING==1
 
 
@@ -88,30 +88,27 @@ static unsigned XUA_TIMEOUT_COUNT  = 0;
 
 #if defined( XUA_AUDIOHUB_DSP_TASKS ) && ( XUA_AUDIOHUB_DSP_TASKS >=1 )
 
+#ifndef XUA_DSP_BUFFER_SIZE
+#define XUA_DSP_BUFFER_SIZE             (0)
+#endif
+
 #include "fo_dsp_basic.h"
 
-extern unsigned XUA_DSP_BUFF_OFS;       //offset of the sample buffer used by dsptasks (A/B)
 
+#define XUA_DSP_RESET(ofs)              xua_dsp_reset(ofs)
+#define XUA_DSP_INIT(sr)                xua_dsp_init(sr)
 #define XUA_DSP_SAVE_SYNCHRONIZER()     xua_dsp_save_synchronizer()
-
-#define XUA_DSP_RESET() do { \
-    xua_dsp_clear_synchronizer();  \
-    XUA_DSP_BUFF_OFS=0; \
-    xua_dsp_reset(XUA_AUDIOHUB_DSP_TASKS); } while(0)
-
 #define XUA_DSP_TASK(x)                 xua_dsp_task(x)
-
-#define XUA_DSP_KILL_ALL_TASKS(x)       xua_dsp_clear_synchronizer();
-#define XUA_DSP_INIT(x)                 xua_dsp_init(x);
+#define XUA_DSP_STOP_ALL()              xua_dsp_stop_all()
 #define XUA_DSP_TRIGGER_LEFT()          xua_dsp_trigger()
 #define XUA_DSP_TRIGGER_RIGHT()         do { } while(0)
+
 #else
 #define XUA_DSP_TASK(x)                 do { } while(0)
-#define XUA_DSP_BUFF_OFS                (0)
 #define XUA_DSP_SAVE_SYNCHRONIZER()     do { } while(0)
-#define XUA_DSP_KILL_ALL_TASKS(x)       do { } while(0)
-#define XUA_DSP_INIT(x)                 do { } while(0)
-#define XUA_DSP_RESET()                 do { } while(0)
+#define XUA_DSP_STOP_ALL()              do { } while(0)
+#define XUA_DSP_INIT(sr)                do { } while(0)
+#define XUA_DSP_RESET(ofs)              do { } while(0)
 #define XUA_DSP_TRIGGER_LEFT()          do { } while(0)
 #define XUA_DSP_TRIGGER_RIGHT()         do { } while(0)
 #endif

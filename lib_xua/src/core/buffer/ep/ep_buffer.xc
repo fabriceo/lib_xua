@@ -39,8 +39,8 @@ unsigned g_feedbackValid = 0;
 
 //XUA_FABRICEO
 unsigned long long SOFtimestamp;    //contains p_for_mclk and gettime at each SOF (WIP)
-
-#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN)
+//XUA_FABRICEO
+#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN) || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
 /* When digital Rx enabled we enable an interrupt EP to inform host about changes in clock validity */
 /* Interrupt EP report data */
 unsigned char g_intData[8] =
@@ -57,6 +57,23 @@ unsigned char g_intData[8] =
 
 unsigned g_intFlag = 0;
 #endif
+
+//XUA_FABRICEO begin
+#if 1 || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
+unsigned char g_intep0[8] =
+{
+    0,    // Class-specific, caused by interface
+    1,    // attribute: CUR
+    0,    // CN/ MCN
+    0,    // CS
+    0,    // interface
+    0,    // ID of entity causing interrupt - this will get modified;
+    0,    // Spare
+    0,    // Spare
+};
+#endif
+//XUA_FABRICEO end
+
 
 #ifdef MIDI
 static inline void swap(xc_ptr &a, xc_ptr &b)
@@ -110,8 +127,11 @@ void XUA_Buffer(
     chanend c_midi_to_host,
     chanend c_midi,
 #endif
-#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN)
+//XUA_FABRICEO
+#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN) || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
     chanend ?c_ep_int,
+#endif
+#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN)
     chanend ?c_clk_int,
 #endif
     chanend c_sof,
@@ -152,9 +172,12 @@ void XUA_Buffer(
                 c_midi_to_host,           /* MIDI In */  // 4
                 c_midi,
 #endif
-#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN)
+//XUA_FABRICEO
+#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN) || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
                 /* Audio Interrupt - only used for interrupts on external clock change */
                 c_ep_int,
+#endif
+#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN)
                 c_clk_int,
 #endif
                 c_sof, c_aud_ctl, p_off_mclk
@@ -209,8 +232,11 @@ void XUA_Buffer_Ep(
     chanend c_midi_to_host,
     chanend c_midi,
 #endif
-#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN)
+//XUA_FABRICEO
+#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN) || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
     chanend ?c_ep_int,
+#endif
+#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN)
     chanend ?c_clk_int,
 #endif
     chanend c_sof,
@@ -248,7 +274,8 @@ void XUA_Buffer_Ep(
     XUD_ep ep_midi_from_host = XUD_InitEp(c_midi_from_host);
     XUD_ep ep_midi_to_host = XUD_InitEp(c_midi_to_host);
 #endif
-#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN)
+//XUA_FABRICEO
+#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN) || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
     XUD_ep ep_int = XUD_InitEp(c_ep_int);
 #endif
 
@@ -411,10 +438,21 @@ void XUA_Buffer_Ep(
                     XUD_SetReady_In(ep_int, g_intData, 6);
                 }
                 break;
-
+//XUA_FABRICEO begin
+#endif
+#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN) || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
+//XUA_FABRICEO end
             /* Interrupt EP data sent, clear flag */
             case XUD_SetData_Select(c_ep_int, ep_int, result):
             {
+//XUA_FABRICEO begin
+#if (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
+                if (g_intep0[6]) { 
+                    g_intep0[6] = 0;
+                    break;
+                }
+#endif
+//XUA_FABRICEO end
                 g_intFlag = 0;
                 break;
             }
@@ -766,6 +804,22 @@ void XUA_Buffer_Ep(
                     sofCount++;
                 }
 #endif
+
+//XUA_FABRICEO begin
+#if (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
+                asm volatile("#XUA_EP0_INTERRUPT:");
+                if (g_intep0[6]) {
+                    if (g_intep0[6] == 1) {
+                        XUD_SetReady_In(ep_int, g_intep0, 6);
+                        g_intep0[6] = 2;
+                    } else 
+                    if (g_intep0[6] == 255) {
+                        g_intep0[6] = 1;
+                    } else g_intep0[6]++;
+                }
+#endif
+//XUA_FABRICEO end
+
             break;
 
 #if (NUM_USB_CHAN_IN > 0)

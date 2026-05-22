@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <math.h>
-
+#include <stdio.h>
 #include "dsp_filter_calc.hpp"
 
 #if 0
@@ -71,7 +71,8 @@ const char * dsp_filter_name[] = {
   "     ","LPLR2","LPLR3","LPLR4","     ","LPLR6","     ","LPLR8",
   "     ","HPLR2","HPLR3","HPLR4","     ","HPLR6","     ","HPLR8",
   "LP1  ","LP2  ","HP1  ","HP2  ","LS1  ","LS2  ","HS1  ","HS2  ",
-  "AP1  ","AP2  ","PEAK ","NOTCH","BP0DB","BPQ  ","HILB ","LT   "
+  "AP1  ","AP2  ","PEAK ","NOTCH","BP0DB","BPQ  ","HILB ","LT   ",
+  "BP0D4","BP0D6","BP0D8"
 };
 
 //helpers normally from math.h
@@ -85,7 +86,7 @@ const char * dsp_filter_name[] = {
 
     //this table provide a list of elementary filters to create 
     //Bessels 2/3/4/6/8, Butterworth or Linkwitz rilley filters
-    filtersTable_s filtersTable[] = {
+    filtersTable_s filtersTable[107] = {
     { FLPBE2,       FLP2, 1.0               , 0.57735026919 },
     { FLPBE3db2,    FLP2, 1.27201964951     , 0.57735026919 },
     { FHPBE2,       FHP2, 1.0               , 0.57735026919 },
@@ -94,7 +95,6 @@ const char * dsp_filter_name[] = {
     { FHPBU2,       FHP2, 1.0               , M_SQRT1_2 },
     { FLPLR2,       FLP2, 1.0               , 0.5 },
     { FHPLR2,       FHP2, 1.0               , 0.5 },
-
     { FLPBE3,       FLP2, 0.94160002653     , 0.691046625825 },
     { FLPBE3,       FLP1, 1.03054454544     , 0.0 },
     { FLPBE3db3,    FLP2, 1.32267579991     , 0.691046625825 },
@@ -111,7 +111,6 @@ const char * dsp_filter_name[] = {
     { FLPLR3,       FLP1, 1.0               , 0.0 },
     { FHPLR3,       FHP2, 1.0               , 0.5 },
     { FHPLR3,       FHP1, 1.0               , 0.5 },
-
     { FLPBE4,       FLP2, 0.944449808226    , 0.521934581669 },
     { FLPBE4,       FLP2, 1.05881751607     , 0.805538281842 },
     { FLPBE3db4,    FLP2, 1.43017155999     , 0.521934581669 },
@@ -128,7 +127,6 @@ const char * dsp_filter_name[] = {
     { FLPLR4,       FLP2, 1.0               , M_SQRT1_2 },
     { FHPLR4,       FHP2, 1.0               , M_SQRT1_2 },
     { FHPLR4,       FHP2, 1.0               , M_SQRT1_2 },
-
     { FLPBE6,       FLP2, 0.928156550439    , 0.510317824749 },
     { FLPBE6,       FLP2, 0.977488555538    , 0.611194546878 },
     { FLPBE6,       FLP2, 1.10221694805     , 1.02331395383 },
@@ -153,7 +151,6 @@ const char * dsp_filter_name[] = {
     { FHPLR6,       FHP2, 1.0               , 0.5 },
     { FHPLR6,       FHP2, 1.0               , 1.0 },
     { FHPLR6,       FHP2, 1.0               , 1.0 },
-
     { FLPBE8,       FLP2, 0.920583104484    , 0.505991069397 },
     { FLPBE8,       FLP2, 0.948341760923    , 0.559609164796 },
     { FLPBE8,       FLP2, 1.01102810214     , 0.710852074442 },
@@ -186,13 +183,23 @@ const char * dsp_filter_name[] = {
     { FHPLR8,       FHP2, 1.0               , 1.3065630 },
     { FHPLR8,       FHP2, 1.0               , 0.54119610 },
     { FHPLR8,       FHP2, 1.0               , 1.3065630 },
+    { FBP0DB2,      FBP0DB, 1.0             , M_SQRT1_2 },
+    { FBP0DB4,      FBP0DB, 1.0             , M_SQRT1_2 },
+    { FBP0DB4,      FBP0DB, 1.0             , M_SQRT1_2 },
+    { FBP0DB6,      FBP0DB, 1.0             , M_SQRT1_2 },
+    { FBP0DB6,      FBP0DB, 1.0             , M_SQRT1_2 },
+    { FBP0DB6,      FBP0DB, 1.0             , M_SQRT1_2 },
+    { FBP0DB8,      FBP0DB, 1.0             , M_SQRT1_2 },
+    { FBP0DB8,      FBP0DB, 1.0             , M_SQRT1_2 },
+    { FBP0DB8,      FBP0DB, 1.0             , M_SQRT1_2 },
+    { FBP0DB8,      FBP0DB, 1.0             , M_SQRT1_2 },
     { FNONE }   //end of table indicator
 };//table
 
 
 //compute a set of coefficient for a simple 1st or 2nd order fiter type, at given fs (sampling rate)
 //coefficient will be soredt in ptr->b0...a2
-int32_t dspFilterCaclCoefs(char ftype, float fs, float F, float Q, float G, float * ptr) {
+int32_t dspFilterCaclCoefs(char ftype, float fs, float F, float Q, float G, dspFilterCoefs &coefs) {
 
     typedef float f_t;
     f_t tw2, a0, alpha, w0, cw0, sw0;
@@ -279,12 +286,12 @@ int32_t dspFilterCaclCoefs(char ftype, float fs, float F, float Q, float G, floa
 
     case FBP0DB: { 
         b0= alpha / a0 * G;
-        b1 = 0;
+        b1 = 0.0f;
         b2 = -b0;
         break; }
 
     case FBPQ: { 
-        b0= sw0/2.0f / a0 * G;
+        b0= sw0 / 2.0f / a0 * G;
         b1 = 0.0f;
         b2 = -b0;
         break; }
@@ -325,13 +332,16 @@ int32_t dspFilterCaclCoefs(char ftype, float fs, float F, float Q, float G, floa
     case FNONE : { b0 = 1.0f; b1 = b2 = a1 = a2 = 0.0f; break; }
     }
     //update target record
-    ptr[0] = b0; ptr[1] = b1; ptr[2] = b2; 
-    ptr[3] = 0;  ptr[4] = a1; ptr[5] = a2;
+    coefs.b0 = b0; coefs.b1 = b1; coefs.b2 = b2; 
+    coefs.a1 = a1; coefs.a2 = a2;
+    coefs.bypass = 0;
+    coefs.mute = 0;
+    coefs.filterSections = 1; 
     return 1;
 }
 
 //compute a set of coefficient for a linkwitz rilley fiter type, at given fs (sampling rate)
-int32_t dspFilterCaclCoefsLT(char ftype, float fs, float F, float Q, float G, float Fp, float Qp, float * ptr) {
+int32_t dspFilterCaclCoefsLT(char ftype, float fs, float F, float Q, float G, float Fp, float Qp, dspFilterCoefs &coefs) {
 
     float a0,c0,c1,d0,d1,fc,gn,gn2;
     d0 = (2.0f * M_PI * F  ); d0 *= d0;
@@ -342,29 +352,35 @@ int32_t dspFilterCaclCoefsLT(char ftype, float fs, float F, float Q, float G, fl
     gn = 2.0f * M_PI * fc / tan( M_PI * fc/fs);
     gn2 = gn * gn;
     a0 = c0 + gn * c1 + gn2;
-    ptr[0] = (d0 + gn * d1 + gn2 ) / a0 * G;
-    ptr[1] = 2.0f * (d0 - gn2)     / a0 * G;
-    ptr[2] = (d0 - gn * d1 + gn2)  / a0 * G;
-    ptr[3] = 0.0f;
-    ptr[4] = - 2.0f * (c0 - gn2)   / a0;
-    ptr[5] = - (c0 - gn * c1 + gn2)/ a0;
+    coefs.b0 = (d0 + gn * d1 + gn2 ) / a0 * G;
+    coefs.b1 = 2.0f * (d0 - gn2)     / a0 * G;
+    coefs.b2 = (d0 - gn * d1 + gn2)  / a0 * G;
+    coefs.a1 = - 2.0f * (c0 - gn2)   / a0;
+    coefs.a2 = - (c0 - gn * c1 + gn2)/ a0;
+    coefs.bypass = 0;
+    coefs.mute = 0;
+    coefs.filterSections = 1;
     return 1;
 }
 
-int32_t dspFilterCaclCoefsMultiple(char ftype, float fs, float F, float G, float * pcoefs) {
+int32_t dspFilterCaclCoefsMultiple(char ftype, float fs, float F, float G, dspFilterCoefs &coefs_) {
+    dspFilterCoefs * coefs = &coefs_;
     filtersTable_s * pf = filtersTable;
     float gain = G;
+    int order = dspFilterGetOrder(ftype);
     do {
         if (pf->ftype == ftype) {
             //multiple section? : apply gain on first one only if G<1.0
             if (pf[1].ftype == ftype) gain = (fabs(G)>=1.0?1.0:G);       
             while (1) {
-                dspFilterCaclCoefs(pf->btype, fs, F * pf->F, pf->Q, gain, pcoefs);
+                dspFilterCaclCoefs(pf->btype, fs, F * pf->F, pf->Q, gain, *coefs);
+                coefs->filterSections = order; 
+                if (order) order--;
                 if (pf[1].ftype != ftype) return 1;   //finished
                 //next one is same type
                 if (pf[2].ftype == ftype) gain = 1.0;
                 else gain = (fabs(G)>=1.0?G:1.0);
-                pcoefs++;
+                coefs++;
                 pf++; 
             } 
         }
@@ -373,3 +389,20 @@ int32_t dspFilterCaclCoefsMultiple(char ftype, float fs, float F, float G, float
     return 0;
 }
 
+
+unsigned dspFilterCoefs :: calcShl(const unsigned int mant) {
+    int shl = 0;
+    while (1) {
+        const float pow2 = (1 << (31-mant)); //example : 2.0 when mant = 30
+        float max = (b0 >= 0.0) ? b0 : -b0;
+        float tmp = (b1 >= 0.0) ? b1 : -b1;
+        max = (tmp > max) ? tmp : max;
+        tmp = (b2 >= 0.0) ? b2 : -b2;
+        max = (tmp > max) ? tmp : max;
+        if (max >= pow2) {
+            shl++;
+            max /= 2.0;
+        } else break;
+    }
+    return shl;
+}

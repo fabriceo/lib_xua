@@ -684,7 +684,8 @@ typedef struct
     // USB_Descriptor_Audio_MixerUnit_t          Audio_MixerUnit;
     unsigned char configDesc_MixerUnit[MIXER_LENGTH];
 #endif
-#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN)
+//XUA_FABRICEO
+#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN) || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
     /* Interrupt EP */
     USB_Descriptor_Endpoint_t                   Audio_Int_Endpoint;
 #endif
@@ -844,7 +845,8 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
         .bDescriptorType               = USB_DESCTYPE_INTERFACE,
         .bInterfaceNumber              = INTERFACE_NUMBER_AUDIO_CONTROL,
         .bAlternateSetting             = 0x00,                     /* Must be 0 */
-#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN)
+//XUA_FABRICEO
+#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN) || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
         .bNumEndpoints                 = 0x01,                    /* 0 or 1 if optional interrupt endpoint is present */
 #else
         .bNumEndpoints                 = 0x00,
@@ -1404,7 +1406,7 @@ USB_Config_Descriptor_Audio2_t cfgDesc_Audio2=
         },
 #endif /* (MIXER) && (MAX_MIX_COUNT > 0) */
 
-#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN)
+#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN)  || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
         /* Standard AS Interrupt Endpoint Descriptor (4.8.2.1): */
         .Audio_Int_Endpoint =
         {

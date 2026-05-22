@@ -1365,7 +1365,8 @@ enum USBEndpointNumber_In
 #if (NUM_USB_CHAN_IN != 0)
     ENDPOINT_NUMBER_IN_AUDIO,
 #endif
-#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN)
+//XUA_FABRICEO
+#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN) || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
     ENDPOINT_NUMBER_IN_INTERRUPT,   /* Audio interrupt/status EP */
 #endif
 #ifdef MIDI

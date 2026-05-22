@@ -225,7 +225,8 @@ XUD_EpType epTypeTableIn[ENDPOINT_COUNT_IN] = { XUD_EPTYPE_CTL | XUD_STATUS_ENAB
 #if (NUM_USB_CHAN_OUT > 0) && ((NUM_USB_CHAN_IN == 0) || defined(UAC_FORCE_FEEDBACK_EP))
                                             XUD_EPTYPE_ISO,    /* Async feedback endpoint */
 #endif
-#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN)
+//XUA_FABRICEO
+#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN) || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
                                             XUD_EPTYPE_INT,
 #endif
 #ifdef MIDI
@@ -531,11 +532,15 @@ int main()
 #ifdef XUD_PRIORITY_HIGH
                 set_core_high_priority_on();
 #endif
+//XUA_FABRICEO_H_
+                while(1) {
+                XUA_XUDwaitStartUp();
                 unsigned xudPwrCfg = (XUA_POWERMODE == XUA_POWERMODE_SELF) ? XUD_PWR_SELF : XUD_PWR_BUS;
-
                 /* USB interface core */
                 XUD_Main(c_xud_out, ENDPOINT_COUNT_OUT, c_xud_in, ENDPOINT_COUNT_IN,
                          c_sof, epTypeTableOut, epTypeTableIn, XUA_USB_BUS_SPEED, xudPwrCfg);
+                XUA_XUDstoped();
+                }
             }
 
 #if (NUM_USB_CHAN_OUT > 0) || (NUM_USB_CHAN_IN > 0) || XUA_HID_ENABLED || defined(MIDI)
@@ -598,9 +603,12 @@ int main()
                            c_xud_in[ENDPOINT_NUMBER_IN_MIDI],          /* MIDI In */  // 4
                            c_midi,
 #endif
-#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN)
+//XUA_FABRICEO
+#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN) || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
                            /* Audio Interrupt - only used for interrupts on external clock change */
                            c_xud_in[ENDPOINT_NUMBER_IN_INTERRUPT],
+#endif
+#if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN)
                            c_clk_int,
 #endif
                            c_sof, c_aud_ctl, p_for_mclk_count

@@ -36,10 +36,10 @@ typedef struct messages_s {
 
 EXTERNC_ON
 
-messages_t * messages_get();
+messages_t * XCUNSAFE messages_get();
 unsigned messages_peek();
-messages_t * messages_create();
-messages_t * messages_clear();
+messages_t * XCUNSAFE messages_create();
+messages_t * XCUNSAFE messages_clear();
 unsigned messages_number();
 
 EXTERNC_OFF

@@ -47,8 +47,10 @@ void XUA_Buffer(
             chanend c_midi_to_host,
             chanend c_midi,
 #endif
-#if XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN || defined(__DOXYGEN__)
+#if XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN  || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))|| defined(__DOXYGEN__)
             NULLABLE_RESOURCE(chanend, c_int),
+#endif
+#if XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN || defined(__DOXYGEN__)
             NULLABLE_RESOURCE(chanend, c_clk_int),
 #endif
             chanend c_sof,
@@ -86,8 +88,10 @@ void XUA_Buffer_Ep(
             chanend c_midi_to_host,
             chanend c_midi,
 #endif
-#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN)
+#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN)|| (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
             chanend ?c_int,
+#endif
+#if (XUA_SPDIF_RX_EN) || (XUA_ADAT_RX_EN)
             chanend ?c_clk_int,
 #endif
             chanend c_sof,

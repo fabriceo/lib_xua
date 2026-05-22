@@ -62,7 +62,7 @@ union u_64_8x8 {
 #define EXTERNC_ON  extern "C" {
 #define EXTERNC_OFF }
 #else
-#define EXTERNC
+#define EXTERNC extern
 #define EXTERNC_ON
 #define EXTERNC_OFF
 #endif

@@ -136,20 +136,21 @@ struct dspFilter {
     //calc all coefficients according to filter type and filter parameters
     //if their value is flagged as "changed". force flag can be used to overload it
     int32_t calcCoefs(float fs, float * pcoefs, char force = 0)  {
+        dspFilterCoefs * coefs = (dspFilterCoefs*)pcoefs;
         int32_t res = 0;
         char chg = s.changed | force;
 
         if (chg & 7) {  //value (or type) changed or bypass changed
 
             if ((s.changed & 16) || (s.ftype==FNONE))  
-                res = dspFilterCaclCoefs(FNONE, fs, F, Q, G, pcoefs);
+                res = dspFilterCaclCoefs(FNONE, fs, F, Q, G, *coefs);
             
             else if (s.ftype >= FLP1) 
-                res = dspFilterCaclCoefs(s.ftype, fs, F, Q, G, pcoefs);
+                res = dspFilterCaclCoefs(s.ftype, fs, F, Q, G, *coefs);
 
             //linkwitz transform
             else if (s.ftype == FLT) 
-                res =  dspFilterCaclCoefsLT(s.ftype, fs, F, Q, G, Fp, Qp, pcoefs);
+                res =  dspFilterCaclCoefsLT(s.ftype, fs, F, Q, G, Fp, Qp, *coefs);
 
             //TODO hilbert transform
             else if (s.ftype == FHILB) res = 0;
@@ -157,7 +158,7 @@ struct dspFilter {
 
             //other combined filters
             else if (s.ftype < FLP1) 
-                res = dspFilterCaclCoefsMultiple(s.ftype, fs, F, G, pcoefs);
+                res = dspFilterCaclCoefsMultiple(s.ftype, fs, F, G, *coefs);
 
             s.changed &= ~3;            //clear changed
         }

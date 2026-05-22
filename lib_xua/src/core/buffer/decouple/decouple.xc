@@ -133,7 +133,7 @@ static inline void _send_sample_4(chanend c_mix_out, int ch)
     read_via_xc_ptr(sample, g_aud_from_host_rdptr);
     g_aud_from_host_rdptr+=4;
 
-#if (OUTPUT_VOLUME_CONTROL == 1) && (!OUT_VOLUME_IN_MIXER)
+#if (OUTPUT_VOLUME_CONTROL == 1) && (!OUT_VOLUME_IN_MIXER) && (!defined(OUTPUT_VOLUME_NOCALC) || (OUTPUT_VOLUME_NOCALC==0))
     int mult;
     int h;
     unsigned l;
@@ -252,7 +252,7 @@ __builtin_unreachable();
                     g_aud_from_host_rdptr+=2;
                     sample <<= 16;
 
-#if (OUTPUT_VOLUME_CONTROL == 1) && (!OUT_VOLUME_IN_MIXER)
+#if (OUTPUT_VOLUME_CONTROL == 1) && (!OUT_VOLUME_IN_MIXER) && (!defined(OUTPUT_VOLUME_NOCALC) || (OUTPUT_VOLUME_NOCALC==0))
                     unsafe
                     {
                         mult = multOutPtr[i];
@@ -314,7 +314,7 @@ __builtin_unreachable();
                     }
                     unpackState++;
 
-#if (OUTPUT_VOLUME_CONTROL == 1) && (!OUT_VOLUME_IN_MIXER)
+#if (OUTPUT_VOLUME_CONTROL == 1) && (!OUT_VOLUME_IN_MIXER) && (!defined(OUTPUT_VOLUME_NOCALC) || (OUTPUT_VOLUME_NOCALC==0))
                     unsafe
                     {
                         mult = multOutPtr[i];
@@ -360,7 +360,7 @@ __builtin_unreachable();
                 {
                     /* Receive sample */
                     int sample = inuint(c_mix_out);
-#if (INPUT_VOLUME_CONTROL == 1)
+#if (INPUT_VOLUME_CONTROL == 1) && (!defined(INPUT_VOLUME_NOCALC) || (INPUT_VOLUME_NOCALC==0))
 #if (!IN_VOLUME_IN_MIXER)
                     /* Apply volume */
                     int mult;
@@ -393,7 +393,7 @@ __builtin_unreachable();
                 {
                     /* Receive sample */
                     int sample = inuint(c_mix_out);
-#if(INPUT_VOLUME_CONTROL == 1)
+#if(INPUT_VOLUME_CONTROL == 1)  && (!defined(INPUT_VOLUME_NOCALC) || (INPUT_VOLUME_NOCALC==0))
 #if (!IN_VOLUME_IN_MIXER)
                     /* Apply volume */
                     int mult;
@@ -428,7 +428,7 @@ __builtin_unreachable();
                 {
                     /* Receive sample */
                     int sample = inuint(c_mix_out);
-#if (INPUT_VOLUME_CONTROL) && (!IN_VOLUME_IN_MIXER)
+#if (INPUT_VOLUME_CONTROL) && (!IN_VOLUME_IN_MIXER)  && (!defined(INPUT_VOLUME_NOCALC) || (INPUT_VOLUME_NOCALC==0))
                     /* Apply volume */
                     int mult;
                     int h;

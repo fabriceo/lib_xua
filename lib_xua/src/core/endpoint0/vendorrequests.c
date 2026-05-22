@@ -6,6 +6,7 @@
 
 #include "xud.h"
 #include "vendorrequests.h"
+#include "debug_print.h"
 
 int VendorAudioRequests(XUD_ep ep0_out, XUD_ep ep0_in, unsigned char bRequest, unsigned char cs, unsigned char cn,
     unsigned short unitId, unsigned char direction, NULLABLE_RESOURCE(chanend, c_aud_ctl),
@@ -33,7 +34,7 @@ int VendorRequests(XUD_ep ep0_out, XUD_ep ep0_in,  REFERENCE_PARAM(USB_SetupPack
 {
     XUD_Result_t result = XUD_RES_ERR;
     if (sp->bRequest >= 0xB0)
-        printf("USB VENDOR REQUEST 0x%x\n", sp->bRequest);
+        debug_printf("USB VENDOR REQUEST 0x%x\n", sp->bRequest);
 
     if(sp->bmRequestType.Direction == USB_BM_REQTYPE_DIRECTION_H2D) {
         int xudres;
@@ -41,22 +42,22 @@ int VendorRequests(XUD_ep ep0_out, XUD_ep ep0_in,  REFERENCE_PARAM(USB_SetupPack
         // get buffer associated with request
         if (sp->wLength) {
             if ((xudres = XUD_GetBuffer(ep0_out, vendorBuf, &vendorLength)) != XUD_RES_OKAY) {
-                printf("VendorRequest XUD_GetBuffer error %d\n",xudres);
+                debug_printf("VendorRequest XUD_GetBuffer error %d\n",xudres);
                 return XUD_RES_ERR;
             }
-            printf("XUD_GetBuffer %d %d done\n",sp->wLength,vendorLength);
+            debug_printf("XUD_GetBuffer %d %d done\n",sp->wLength,vendorLength);
         }
     } else vendorLength = 0;
 
     switch( sp->bRequest ) {
 
         case VENDOR_TEST1: {
-            printf("H2D TEST1\n");
+            debug_printf("H2D TEST1\n");
             result = XUD_RES_OKAY;
         } break;
 
         case VENDOR_TEST2: {
-            printf("D2H TEST2\n");
+            debug_printf("D2H TEST2\n");
             vendorBuf[0] = 0x78; vendorBuf[1] = 0x56; vendorBuf[2] = 0x34; vendorBuf[3] = 0x12;
             vendorLength = 4;
             result = XUD_RES_OKAY;

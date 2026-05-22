@@ -77,7 +77,7 @@ extern buffered out port:32 I2S_EXTRA_LRCLK ;
 #ifdef I2S_EXTRA_BCLK
 extern out port I2S_EXTRA_BCLK ;
 #endif
-
+extern unsigned lrclkError;
 
 #if CODEC_MASTER
 void InitPorts_slave
@@ -253,7 +253,7 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
 
 //XUA_FABRICEO_H_
     XUA_TIMEOUT_RESET();
-    XUA_DSP_RESET();
+    XUA_DSP_INIT(curSamFreq);
 
     UserBufferManagementInit(curSamFreq);
 
@@ -659,6 +659,18 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
             }
 
         } //syncerror
+        if (syncError) {
+            lrclkError = 1;
+            debug_printf("lrclkError set\n");
+        }
+        unsafe {
+        volatile unsigned * unsafe p = &lrclkError;
+        asm volatile("#checklrclkError:");
+        if (*p) {
+            while(*p) { };
+            debug_printf("lrclkError cleared\n");
+        }
+        }
     }
     return 0;
 }
@@ -1133,33 +1145,34 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
 
 //XUA_FABRICEO_H_
 #if defined(XUA_AUDIOHUB_DSP_TASKS) && ( XUA_AUDIOHUB_DSP_TASKS >= 1)
-    XUA_DSP_INIT(XUA_AUDIOHUB_DSP_TASKS);
+    XUA_DSP_RESET(XUA_DSP_BUFFER_SIZE);
 
     par {
-            XUA_DSP_TASK(1);
+            XUA_DSP_TASK(0);
 
 #if ( XUA_AUDIOHUB_DSP_TASKS >= 2)
-            XUA_DSP_TASK(2);
+            XUA_DSP_TASK(1);
 #endif
 #if ( XUA_AUDIOHUB_DSP_TASKS >= 3)
-            XUA_DSP_TASK(3);
+            XUA_DSP_TASK(2);
 #endif
 #if ( XUA_AUDIOHUB_DSP_TASKS >= 4)
-            XUA_DSP_TASK(4);
+            XUA_DSP_TASK(3);
 #endif
 #if ( XUA_AUDIOHUB_DSP_TASKS >= 5)
-            XUA_DSP_TASK(5);
+            XUA_DSP_TASK(4);
 #endif
 #if ( XUA_AUDIOHUB_DSP_TASKS >= 6)
-            XUA_DSP_TASK(6);
+            XUA_DSP_TASK(5);
 #endif
 #if ( XUA_AUDIOHUB_DSP_TASKS >= 7)
-            XUA_DSP_TASK(7);
+            XUA_DSP_TASK(6);
 #endif
 #endif //XUA_AUDIOHUB_DSP_TASKS
         {
 //XUA_FABRICEO_H_
                     XUA_DSP_SAVE_SYNCHRONIZER();
+
                     command = AudioHub_MainLoop(c_aud
 #if (XUA_SPDIF_TX_EN)
                        , c_spdif_out
@@ -1178,10 +1191,8 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
                        , c_pdm_in
 #endif
                       , p_lrclk, p_bclk, p_i2s_dac, p_i2s_adc );
-
-#if defined(XUA_AUDIOHUB_DSP_TASKS) && ( XUA_AUDIOHUB_DSP_TASKS >= 1)
-                    XUA_DSP_KILL_ALL_TASKS(XUA_AUDIOHUB_DSP_TASKS);
-#endif
+//XUA_FABRICEO_H_
+                    XUA_DSP_STOP_ALL();
         }
 //XUA_FABRICEO_H_
 #if defined(XUA_AUDIOHUB_DSP_TASKS) && ( XUA_AUDIOHUB_DSP_TASKS >= 1)

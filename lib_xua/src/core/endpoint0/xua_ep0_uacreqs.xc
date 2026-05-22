@@ -574,6 +574,7 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
                                 {
                                     if ((sp.wValue & 0xff) <= NUM_USB_CHAN_OUT)
                                     {
+                                        USBPRINTF("USB setvolout[%d] %d\n", sp.wValue & 0xff, ((int) (signed char) (buffer, unsigned char[])[1]));
                                         volsOut[ sp.wValue&0xff ] = (buffer, unsigned char[])[0] | (((int) (signed char) (buffer, unsigned char[])[1]) << 8);
                                         updateVol( unitID, ( sp.wValue & 0xff ), c_mix_ctl);
                                         return XUD_DoSetRequestStatus(ep0_in);
@@ -583,6 +584,7 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
                                 {
                                     if ((sp.wValue & 0xff) <= NUM_USB_CHAN_IN)
                                     {
+                                        USBPRINTF("USB setvolin %d\n", sp.wValue & 0xff);
                                         volsIn[ sp.wValue&0xff ] = (buffer, unsigned char[])[0] | (((int) (signed char) (buffer, unsigned char[])[1]) << 8);
                                         updateVol( unitID, ( sp.wValue & 0xff ), c_mix_ctl);
                                         return XUD_DoSetRequestStatus(ep0_in);
@@ -595,6 +597,7 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
                                 {
                                     if ((sp.wValue & 0xff) <= NUM_USB_CHAN_OUT)
                                     {
+                                        USBPRINTF("USB getvolout[%d] %d\n", sp.wValue & 0xff,volsOut[ sp.wValue&0xff ] >> 8);
                                         (buffer, unsigned char[])[0] = volsOut[ sp.wValue&0xff ];
                                         (buffer, unsigned char[])[1] = volsOut[ sp.wValue&0xff ] >> 8;
                                         return XUD_DoGetRequest(ep0_out, ep0_in, (buffer, unsigned char[]), 2,  sp.wLength);
@@ -602,6 +605,7 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
                                 }
                                 else
                                 {
+                                    USBPRINTF("USB getvolin %x %d\n",unitID, sp.wValue & 0xff);
                                     if ((sp.wValue & 0xff) <= NUM_USB_CHAN_IN)
                                     {
                                         (buffer, unsigned char[])[0] = volsIn[ sp.wValue&0xff ];
@@ -964,6 +968,27 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
 
                 /* Feature Units */
                 case FU_USBIN:      /* USB Data into Device */
+//XUA_FABRICEO begin
+                    /* Control Selector (CS) */
+                    switch( sp.wValue >> 8 )
+                    {
+                        /* Volume control, send back same range for all channels (i.e. ignore CN) */
+                        case FU_VOLUME_CONTROL:
+                            USBPRINTF("USB get MIN_MAX_IN\n");
+                            storeShort((buffer, unsigned char[]), 0, 1);
+                            storeShort((buffer, unsigned char[]), 2, MIN_VOLUME_IN);
+                            storeShort((buffer, unsigned char[]), 4, MAX_VOLUME_IN);
+                            storeShort((buffer, unsigned char[]), 6, VOLUME_RES_IN);
+                            return XUD_DoGetRequest(ep0_out, ep0_in, (buffer, unsigned char[]), sp.wLength, sp.wLength);
+                            break;
+
+                        default:
+                            /* Unknown control selector for FU */
+                            break;
+
+                    }
+                    break;
+//XUA_FABRICEO end                    
                 case FU_USBOUT:     /* USB Data from Device */
 
                     /* Control Selector (CS) */
@@ -972,6 +997,7 @@ int AudioClassRequests_2(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket_t &sp, c
                         /* Volume control, send back same range for all channels (i.e. ignore CN) */
                         case FU_VOLUME_CONTROL:
 
+                            USBPRINTF("USB get MIN_MAX_OUT\n");
                             storeShort((buffer, unsigned char[]), 0, 1);
                             storeShort((buffer, unsigned char[]), 2, MIN_VOLUME);
                             storeShort((buffer, unsigned char[]), 4, MAX_VOLUME);
@@ -1191,6 +1217,7 @@ XUD_Result_t AudioClassRequests_1(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket
 )
 {
 #if (OUTPUT_VOLUME_CONTROL == 1) || (INPUT_VOLUME_CONTROL == 1)
+
     unsigned char buffer[68];
     unsigned unitID;
     XUD_Result_t result;
@@ -1219,11 +1246,13 @@ XUD_Result_t AudioClassRequests_1(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket
                         switch(unitID)
                         {
                             case FU_USBOUT:
+                                USBPRINTF("USB setvolout %d\n", sp.wValue & 0xff);
                                 volsOut[ sp.wValue & 0xff ] = buffer[0] | (((int) (signed char) buffer[1]) << 8);
                                 updateVol( unitID, ( sp.wValue & 0xff ), c_mix_ctl);
                                 return XUD_DoSetRequestStatus(ep0_in);
 
                             case FU_USBIN:
+                                USBPRINTF("USB setvolin %d\n", sp.wValue & 0xff);
                                 volsIn[ sp.wValue & 0xff ] = buffer[0] | (((int) (signed char) buffer[1]) << 8);
                                 updateVol( unitID, ( sp.wValue & 0xff ), c_mix_ctl);
                                 return XUD_DoSetRequestStatus(ep0_in);
@@ -1261,6 +1290,7 @@ XUD_Result_t AudioClassRequests_1(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket
                 {
                     case FU_VOLUME_CONTROL:
                     {
+                        USBPRINTF("USB getvolout %d\n", sp.wValue & 0xff);
                         buffer[0] = volsOut[ sp.wValue&0xff ];
                         buffer[1] = volsOut[ sp.wValue&0xff ] >> 8;
                         return XUD_DoGetRequest(ep0_out, ep0_in, buffer, 2, sp.wLength);
@@ -1280,6 +1310,7 @@ XUD_Result_t AudioClassRequests_1(XUD_ep ep0_out, XUD_ep ep0_in, USB_SetupPacket
                 {
                     case FU_VOLUME_CONTROL:
                     {
+                        USBPRINTF("USB getvolin %d\n", sp.wValue & 0xff);
                         buffer[0] = volsIn[ sp.wValue&0xff ];
                         buffer[1] = volsIn[ sp.wValue&0xff ] >> 8;
                         return XUD_DoGetRequest(ep0_out, ep0_in, buffer, 2, sp.wLength);
