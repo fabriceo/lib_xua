@@ -26,7 +26,6 @@ struct dspFilterCoefs {
 //biquads coefficient used for integer routines
 struct __attribute__((aligned(8))) dspFilterCoefsInt {
     //do not change coefficient order
-    const unsigned int sizeofthis = sizeof(this);
     int b0,b1,b2,a1,a2,zero;
     void reset() { b0 = b1 = b2 = a1 = a2 = zero = 0; }
 };
@@ -34,8 +33,7 @@ struct __attribute__((aligned(8))) dspFilterCoefsInt {
 
 //biquads coefficient used for routines using VPU
 struct dspFilterCoefsVPU {
-    //do not change coefficient order
-    const unsigned int sizeofthis = sizeof(this);
+    //do not change coefficient order. 8 values to benefit from VPU format
     int b0,b1,b2,zero,a1,a2,zero2,zero3;
     void reset() { b0 = b1 = b2 = a1 = a2 = zero = zero2 = zero3 = 0; }
 };
@@ -163,7 +161,11 @@ int32_t dspFilterCaclCoefsMultiple(char ftype, float fs, float F, float G, dspFi
 
 template<typename TCoefs>
 //convert filter coeffcient, from float record to integer record, either Int or VPU
-unsigned dspFilterCoefsConvert(dspFilterCoefs cfloat[], TCoefs cint[], const int order, const unsigned int mant, bool calcSHL, bool reduceA1 = false) {
+unsigned dspFilterCoefsConvert(dspFilterCoefs cfloat[], TCoefs cint[], const int order, const unsigned int mant, bool calcSHL = false, bool reduceA1 = false) {
+    if (sizeof(TCoefs) == sizeof(dspFilterCoefsVPU)) {
+        reduceA1 = false;   //do not change a1 for VPU biquads coefficients
+        calcSHL  = false;   //cannot use this scalling approach with VPU, need another container
+    }
     bool over = false;
     int shltot = 0;
     for (int i=0; i < order; i++, cint++, cfloat++ ) {
@@ -184,6 +186,7 @@ unsigned dspFilterCoefsConvert(dspFilterCoefs cfloat[], TCoefs cint[], const int
         dspInt a2(cfloat->a2, mant - shl);
         over |= a2.over;
         cint->a2 = a2;
+        //eventually put the total shl value in the last "zero" cell of the coefint structure
         if (calcSHL && (i==(order-1))) cint->zero = mant - shltot;
     }
     return calcSHL ? shltot : over;

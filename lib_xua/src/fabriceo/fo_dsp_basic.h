@@ -12,24 +12,27 @@
 #ifndef FO_DSP_BASIC_H_
 #define FO_DSP_BASIC_H_
 
-#include "fo_helpers.h"
+#include "fo_helpers.h" //for u_64_8x8
 
 static inline void xua_dsp_save_synchronizer() {
     asm volatile("#xua_dsp_save_synchronizer:");
     int s; //synchronizer is stored in R5 when enterring here from "__start_other_cores"
     //this approach is compatible with .XC compiler
-    asm volatile("stw r5,dp[xua_dsp_synchronizer] ;mov %0,r5":"=r"(s)::"memory","r5");
+    asm volatile("stw r5,dp[xua_dsp_synchronizer] ; mov %0,r5":"=r"(s)::"memory","r5");
     //verify that the value we got is looking like a synchronizer
     if ((s & ~0x700) != 3) __builtin_trap();
 }
+
 static inline void xua_dsp_clear_synchronizer() {
     asm volatile("stw %0,dp[xua_dsp_synchronizer]"::"r"(0));
 }
+
 static inline unsigned xua_dsp_get_synchronizer() {
     int s; asm volatile("ldw %0,dp[xua_dsp_synchronizer]":"=r"(s));
     return s;
 }
 
+//used to include eventualy user defined macro like XUA_DSP_USER_TCB
 #ifdef __xua_conf_h_exists__
     #include "xua_conf.h"
 #endif
@@ -44,13 +47,14 @@ typedef struct {
 
 // table for 8 maximum dsp tasks, using 8bits per task status for atomic load/store with "ldd" assembly
 typedef struct {
-    union u_64_8x8 runids;       //contains the cpu ID +1 for each launched task, zero when finished
-    union u_64_8x8 runable;      //pattern of tasks expected to run (8x8bits)
+    union u_64_8x8 runids;       //contains the core ID +1 for each launched task, zero when finished
+    union u_64_8x8 runable;      //pattern of tasks expected to run (8x8bits), lsb first
     union u_64_8x8 runlast;      //last known value of running, to detect overload between 2 samples
     union u_64_8x8 running;      //status of the 8 tasks, usefull to wait till end of all tasks.
-    xua_dsp_tcb_t tcb[8];        //pointer on task TCB
+    xua_dsp_tcb_t tcb[8];        //pointer on task TCB defined above
 } xua_dsp_head_t;
 
+//possibility to overload the macro
 #ifndef xua_dsp_task
 #define xua_dsp_task(x) xua_dsp_task_(x)
 #endif
@@ -62,10 +66,22 @@ typedef struct {
 
 //all functions below are declared "weak" in fo_dsp_basic.c
 EXTERNC_ON
-void xua_dsp_init(unsigned sampFreq);
-void xua_dsp_reset(unsigned ofs);
+void xua_dsp_init();
+void xua_dsp_init_();
+void xua_dsp_launch_tasks();
+void xua_dsp_launch_tasks_();
+void xua_dsp_config(unsigned sampFreq);
+void xua_dsp_config_(unsigned sampFreq);
 void xua_dsp_stop_all();
-unsigned xua_dsp_trigger();
+void xua_dsp_stop_all_();
+unsigned long long xua_dsp_trigger();
+unsigned long long xua_dsp_trigger_();
+void xua_dsp_trigger_disable();
+void xua_dsp_trigger_disable_();
+void xua_dsp_trigger_disable_wait();
+void xua_dsp_trigger_disable_wait_();
+void xua_dsp_trigger_enable();
+void xua_dsp_trigger_enable_();
 void xua_dsp_core_(const unsigned n);
 void xua_dsp_task_(const unsigned x);
 EXTERNC_OFF

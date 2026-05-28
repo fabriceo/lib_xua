@@ -21,8 +21,6 @@
     #include "debug_print.h"
 #endif
 
-extern unsigned dummyCounter;
-
 /************ AUDIOHUB EXTENSIONS ***************/
 
 
@@ -94,9 +92,9 @@ static unsigned XUA_TIMEOUT_COUNT  = 0;
 
 #include "fo_dsp_basic.h"
 
-
-#define XUA_DSP_RESET(ofs)              xua_dsp_reset(ofs)
-#define XUA_DSP_INIT(sr)                xua_dsp_init(sr)
+#define XUA_DSP_INIT()                  xua_dsp_init()
+#define XUA_DSP_CONFIG(sr)              xua_dsp_config(sr)
+#define XUA_DSP_LAUNCH_TASKS()          xua_dsp_launch_tasks()
 #define XUA_DSP_SAVE_SYNCHRONIZER()     xua_dsp_save_synchronizer()
 #define XUA_DSP_TASK(x)                 xua_dsp_task(x)
 #define XUA_DSP_STOP_ALL()              xua_dsp_stop_all()
@@ -104,13 +102,16 @@ static unsigned XUA_TIMEOUT_COUNT  = 0;
 #define XUA_DSP_TRIGGER_RIGHT()         do { } while(0)
 
 #else
+
+#define XUA_DSP_LAUNCH_TASKS()          do { } while(0)
+#define XUA_DSP_INIT()                  do { } while(0)
 #define XUA_DSP_TASK(x)                 do { } while(0)
 #define XUA_DSP_SAVE_SYNCHRONIZER()     do { } while(0)
 #define XUA_DSP_STOP_ALL()              do { } while(0)
-#define XUA_DSP_INIT(sr)                do { } while(0)
-#define XUA_DSP_RESET(ofs)              do { } while(0)
+#define XUA_DSP_CONFIG(sr)              do { } while(0)
 #define XUA_DSP_TRIGGER_LEFT()          do { } while(0)
 #define XUA_DSP_TRIGGER_RIGHT()         do { } while(0)
+
 #endif
 
 

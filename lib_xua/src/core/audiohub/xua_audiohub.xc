@@ -253,7 +253,6 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
 
 //XUA_FABRICEO_H_
     XUA_TIMEOUT_RESET();
-    XUA_DSP_INIT(curSamFreq);
 
     UserBufferManagementInit(curSamFreq);
 
@@ -659,6 +658,7 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
             }
 
         } //syncerror
+//XUA_FABRICEO_H_
         if (syncError) {
             lrclkError = 1;
             debug_printf("lrclkError set\n");
@@ -931,6 +931,7 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
         AudioHwInit();
 //XUA_FABRICEO_H_
         spdifDivider=0;
+        XUA_DSP_INIT();
         /* Only break this loop if LP non streaming enabled and streams are both Alt 0 */
         while((XUA_LOW_POWER_NON_STREAMING == 0) || audioActive)
         {
@@ -1049,7 +1050,10 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
                 /* Wait for ACK back from clockgen or ep_buffer to signal clocks all good */
                 c_audio_rate_change :> int _;
 #endif
-
+//XUA_FABRICEO_H_
+#if defined(XUA_AUDIOHUB_DSP_TASKS) && ( XUA_AUDIOHUB_DSP_TASKS >= 1)
+                XUA_DSP_CONFIG(curSamFreq);
+#endif
                 /* User should unmute audio hardware */
                 AudioHwConfig_UnMute();
             }
@@ -1142,11 +1146,9 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
                     debug_printf("clk_audio_mclk ticks = %d\n",ts);
 #endif
 
-
 //XUA_FABRICEO_H_
 #if defined(XUA_AUDIOHUB_DSP_TASKS) && ( XUA_AUDIOHUB_DSP_TASKS >= 1)
-    XUA_DSP_RESET(XUA_DSP_BUFFER_SIZE);
-
+    XUA_DSP_LAUNCH_TASKS();
     par {
             XUA_DSP_TASK(0);
 
