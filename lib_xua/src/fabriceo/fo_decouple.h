@@ -19,7 +19,7 @@
 
 #include "fo_msg_basic.h"
 
-static inline void decouple_AUDCTL_SET_SAMPLE_FREQ(unsigned freq)  { unsafe {
+static inline void decouple_AUDCTL_SET_SAMPLE_FREQ(unsigned freq)  { XCUNSAFE {
     messages_t * XCUNSAFE m = messages_create();
     if (m) { m->param1 = freq; m->msg = DEC_RATE_CHANGE; }
 } }

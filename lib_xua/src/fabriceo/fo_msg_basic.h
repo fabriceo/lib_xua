@@ -43,4 +43,22 @@ messages_t * XCUNSAFE messages_clear();
 unsigned messages_number();
 
 EXTERNC_OFF
+
+
+// list of messages exchanged between lib_xua USB tile and the user Application (eventually in c++)
+typedef enum  {
+    MSG_NOT_READY = 0,
+    DEC_RATE_CHANGE,        //when decouple send a XUA_AUDCTL_SET_SAMPLE_FREQ command to audio hub
+    EP0_VOLUME_OUT,
+    EP0_VOLUME_IN,
+    EP0_VENDOR_REQ,         // when the usb host send a vendor request
+    EP0_DFU_MODE,           // when the device reboot with single DFU interface
+    BUF_SOF_MCLK_STOPED,    //indicate that mclk on USB tile input port is gone
+    BUF_SOF_MCLK_STARTED,   //indicate that mclk on USB tile input port is now running well
+    BUF_SOF_MCLK_CHANGED,   //indicate that mclk on USB tile input port has changed
+
+} messages_e;
+
+
+
 #endif /* XUA_MSG_BASIC_H_ */

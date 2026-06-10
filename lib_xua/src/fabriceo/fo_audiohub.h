@@ -23,7 +23,6 @@
 
 /************ AUDIOHUB EXTENSIONS ***************/
 
-
 //test depending on feature allowed or not in xua_conf.h
 #if defined( XUA_AUDIOHUB_TIMING ) && (XUA_AUDIOHUB_TIMING==1)
 
