@@ -24,7 +24,7 @@ int VendorAudioRequests(XUD_ep ep0_out, XUD_ep ep0_in, unsigned char bRequest, u
 int VendorRequests(XUD_ep ep0_out, XUD_ep ep0_in,  REFERENCE_PARAM(USB_SetupPacket_t, sp) VENDOR_REQUESTS_PARAMS_DEC_) __attribute__ ((weak));
 
 int VendorRequests(XUD_ep ep0_out, XUD_ep ep0_in,  REFERENCE_PARAM(USB_SetupPacket_t, sp) VENDOR_REQUESTS_PARAMS_DEC_) {
-    
+    return XUD_RES_OKAY;
 }
 
 void VendorRequests_Init(VENDOR_REQUESTS_PARAMS_DEC) __attribute__ ((weak));
