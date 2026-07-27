@@ -335,7 +335,13 @@ void usb_audio_io(chanend ?c_aud_in,
     chan c_spdif_tx;
 
     /* Setup S/PDIF tx port - note this is done before par since sharing clock-block/port */
-    spdif_tx_port_config(p_spdif_tx, clk_audio_mclk, p_mclk_in, 7);
+//XUA_FABRICEO
+#if defined(XUA_SPDIFTX_DELAY)
+static const unsigned spdif_delay = XUA_SPDIFTX_DELAY;
+#else
+static const unsigned spdif_delay = 7;
+#endif
+    spdif_tx_port_config(p_spdif_tx, clk_audio_mclk, p_mclk_in, spdif_delay);
 #endif
 
     par
