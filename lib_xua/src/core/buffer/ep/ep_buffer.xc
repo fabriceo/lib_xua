@@ -39,6 +39,8 @@ unsigned g_feedbackValid = 0;
 
 //XUA_FABRICEO
 unsigned long long SOFtimestamp;    //contains p_for_mclk and gettime at each SOF (WIP)
+unsigned SOFbypass;                 //1 to force mclk measurement to be static
+
 //XUA_FABRICEO
 #if (XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN) || (defined(XUA_EP0_INTERRUPT) && (XUA_EP0_INTERRUPT>0))
 /* When digital Rx enabled we enable an interrupt EP to inform host about changes in clock validity */
@@ -286,7 +288,11 @@ void XUA_Buffer_Ep(
     unsigned char cmd;
     unsigned sampleFreq = DEFAULT_FREQ;
     unsigned masterClockFreq = DEFAULT_MCLK_FREQ;
-
+//XUA_FABRICEO begin
+    #define MCLK_48_DIV8000  (MCLK_48/8000)
+    #define MCLK_441_DIV8000 (MCLK_441/8000)
+    unsigned masterClockFreqDiv8000 = DEFAULT_MCLK_FREQ / 8000;
+//XUA_FABRICEO end
 #if (XUA_SYNCMODE == XUA_SYNCMODE_ASYNC)
     unsigned lastClock = 0;
     unsigned streamChangeOngoing = 0; /* This is a local which is updated with g_streamChangeOngoing to monitor progress of audiohub command */
@@ -484,10 +490,12 @@ void XUA_Buffer_Ep(
                         if((MCLK_48 % sampleFreq) == 0)
                         {
                             masterClockFreq = MCLK_48;
+                            masterClockFreqDiv8000 = MCLK_48_DIV8000;
                         }
                         else
                         {
                             masterClockFreq = MCLK_441;
+                            masterClockFreqDiv8000 = MCLK_441_DIV8000;
                         }
                     }
 #endif /* (MAX_FREQ != MIN_FREQ) */
@@ -644,7 +652,10 @@ void XUA_Buffer_Ep(
 //XUA_FABRICEO begin
                 int timestamp;
                 asm volatile("gettime %0" : "=r"(timestamp));
+                //save the last TS counter value and the time in a new 64 bit variable
                 asm volatile("std %0,%1,%2[0]"::"r"(timestamp),"r"(u_tmp),"r"(&SOFtimestamp));
+                asm volatile ("ldw %0, dp[SOFbypass]":"=r"(timestamp));
+                if (timestamp) u_tmp = masterClockFreqDiv8000;
 //XUA_FABRICEO end
 #endif
                 /* The time we base feedback on will be invalid until we get 2 SOF's */
@@ -668,7 +679,7 @@ void XUA_Buffer_Ep(
                         feedbackMul = 8ULL;  /* TODO Use 4 instead of 8 to avoid windows LSB issues? */
 
                     /* Number of MCLK ticks in this SOF period (E.g = 125 * 100 = 12500) */
-                    int count = u_tmp - lastClock;
+                    int count= u_tmp - lastClock;
 
                     unsigned long long full_result = count * feedbackMul * sampleFreq;
 

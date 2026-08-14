@@ -661,14 +661,14 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
 //XUA_FABRICEO_H_
         if (syncError) {
             lrclkError = 1;
-            debug_printf("lrclkError set\n");
+            //debug_printf("lrclkError set\n");
         }
         unsafe {
         volatile unsigned * unsafe p = &lrclkError;
         asm volatile("#checklrclkError:");
         if (*p) {
             while(*p) { };
-            debug_printf("lrclkError cleared\n");
+            //debug_printf("lrclkError cleared\n");
         }
         }
     }

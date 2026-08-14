@@ -17,7 +17,7 @@
 
 //XUA_FABRICEO_H_
 #include "../src/fabriceo/fo_decouple.h"
-
+extern unsigned SOFbypass;
 
 #ifdef NATIVE_DSD
 #include "usbaudio20.h"             /* Defines from the USB Audio 2.0 Specifications */
@@ -1163,6 +1163,11 @@ void XUA_Buffer_Decouple(chanend c_mix_out
 
                 continue;
             }
+//XUA_FABRICEO_H_
+        if (SOFbypass) {
+            /* Set buffer to send back to zeros buffer */
+            aud_to_host_buffer = aud_to_host_zeros;
+        }
         }
 #endif /* NUM_USB_CHAN_IN > 0 */
     }
