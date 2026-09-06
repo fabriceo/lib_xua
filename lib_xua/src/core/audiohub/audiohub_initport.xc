@@ -129,6 +129,11 @@ void InitPorts_slave(buffered _XUA_CLK_DIR port:32 p_lrclk, buffered _XUA_CLK_DI
     /* E.g. 2 * 32 - 32 + 1 = 33 for stereo */
     /* E.g. 8 * 32 - 32 + 1 = 225 for 8 chan TDM */
 
+//XUA_FABRICEO_H
+#if (I2S_CHANS_PER_FRAME == 2)
+    tmp += 64;
+#endif
+
 #if (I2S_CHANS_DAC != 0)
 #pragma loop unroll
     for(int i = 0; i < I2S_WIRES_DAC; i++)

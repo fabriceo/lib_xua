@@ -113,5 +113,8 @@ static unsigned XUA_TIMEOUT_COUNT  = 0;
 
 #endif
 
+#if defined( XUA_AUDIOHUB_DIVIDE_SPDIF_CLK ) && (XUA_AUDIOHUB_DIVIDE_SPDIF_CLK > 0)
+
+#endif
 
 #endif /* FO_AUDIOHUB_H_ */

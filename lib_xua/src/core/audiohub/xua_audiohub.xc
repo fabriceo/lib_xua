@@ -48,7 +48,7 @@
 
 //XUA_FABRICEO_H_
 #include "../src/fabriceo/fo_audiohub.h"
-
+extern unsigned measureMclk(int max, unsigned fbase);   //audiohw.xc
 
 #define XUA_MAX(x,y) ((x)>(y) ? (x) : (y))
 
@@ -178,9 +178,12 @@ static inline int HandleSampleClock(int frameCount, buffered _XUA_CLK_DIR port:3
 }
 
 //XUA_FABRICEO_H_
-unsigned spdifDivider;      //in case sampFreq > 192k we divide freq before sending to spdif
-unsigned spdifFreqCount;    //counter for this
+unsigned spdifDivider;      //in case sampFreq > 192k we send only 1/n samples to the spdif generator
+static unsigned spdifFreqCount;    //counter for this
 
+#if defined( XUA_AUDIOHUB_DIVIDE_SPDIF_CLK ) && (XUA_AUDIOHUB_DIVIDE_SPDIF_CLK > 0) && XUA_SPDIF_TX_EN
+unsigned divider_audio_mclk = 1;  //divider to apply to clk_audio_mclk for 48K (default frequency) = 8
+#endif
 
 #pragma unsafe arrays
 unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
@@ -657,20 +660,13 @@ unsigned static AudioHub_MainLoop(chanend ?c_aud, chanend ?c_spd_out
                 frameCount = 0;
             }
 
-        } //syncerror
+        } //!syncerror
 //XUA_FABRICEO_H_
         if (syncError) {
-            lrclkError = 1;
-            //debug_printf("lrclkError set\n");
-        }
-        unsafe {
-        volatile unsigned * unsafe p = &lrclkError;
-        asm volatile("#checklrclkError:");
-        if (*p) {
-            while(*p) { };
-            //debug_printf("lrclkError cleared\n");
-        }
-        }
+            lrclkError ++;
+            debug_printf("lrclkError %d\n",lrclkError);
+            unsigned measure = measureMclk( 10, 0); //10ms max
+        } 
     }
     return 0;
 }
@@ -919,13 +915,13 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
         directly from the MCLK port. */
         /* Start the master clock-block */
         start_clock(clk_audio_mclk);
+//XUA_FABRICEO_H_
 #else
 #if defined( XUA_AUDIOHUB_TIMING ) && (XUA_AUDIOHUB_TIMING==1)
         configure_clock_src(clk_audio_mclk, p_mclk_in);
         start_clock(clk_audio_mclk);
 #endif
 #endif /* ((AUDIO_IO_TILE == XUD_TILE) || XUA_ADAT_TX_EN || XUA_SPDIF_TX_EN) */
-
 
         /* Perform required CODEC/ADC/DAC initialisation */
         AudioHwInit();
@@ -1040,8 +1036,27 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
                 /* User should mute audio hardware */
                 AudioHwConfig_Mute();
 
+//XUA_FABRICEO_H_
+#if defined( XUA_AUDIOHUB_DIVIDE_SPDIF_CLK ) && (XUA_AUDIOHUB_DIVIDE_SPDIF_CLK > 0) && XUA_SPDIF_TX_EN
+                stop_clock(clk_audio_mclk);
+                set_clock_div(clk_audio_mclk, 0 );
+                start_clock(clk_audio_mclk);
+#endif
+
                 /* User code should configure audio harware for SampleFreq/MClk etc */
                 AudioHwConfig(curFreq, mClk, dsdMode, curSamRes_DAC, curSamRes_ADC);
+
+//XUA_FABRICEO_H_
+#if defined( XUA_AUDIOHUB_DIVIDE_SPDIF_CLK ) && (XUA_AUDIOHUB_DIVIDE_SPDIF_CLK > 0) && XUA_SPDIF_TX_EN
+                //in this case, clk_audio_mclk is probably used only for spdif TX, so adjusting the divider to fit nicely
+                divider_audio_mclk = mClk / XUA_AUDIOHUB_DIVIDE_SPDIF_CLK / curSamFreq / 64;  //e.g. 49152000/ (192000*128) => 2
+                debug_printf("AUDIOHUB : divider_audio_mclk = %d\n",divider_audio_mclk);
+                stop_clock(clk_audio_mclk);
+                //by dividing the audio_mclk, we ensure that the SPDIF_TX code just write one value in the output register
+                set_clock_div(clk_audio_mclk, divider_audio_mclk / 2 );
+                start_clock(clk_audio_mclk);
+#endif
+
 #if (XUA_SYNCMODE == XUA_SYNCMODE_SYNC || XUA_SPDIF_RX_EN || XUA_ADAT_RX_EN)
                 /* Notify clockgen of new mCLk */
                 c_audio_rate_change <: mClk;
@@ -1115,7 +1130,11 @@ void XUA_AudioHub(chanend ?c_aud, clock ?clk_audio_mclk, clock ?clk_audio_bclk,
                         outuint(c_spdif_out, curSamFreq);
                         spdifDivider=0;
                     }
-                    outuint(c_spdif_out, mClk);
+#if defined( XUA_AUDIOHUB_DIVIDE_SPDIF_CLK ) && (XUA_AUDIOHUB_DIVIDE_SPDIF_CLK > 0)
+                    outuint(c_spdif_out, mClk / divider_audio_mclk);  //to take into account the physical clock divider introduced
+#else
+                    outuint(c_spdif_out, mClk);  //to take into account the physical clock divider introduced
+#endif
                     spdifFreqCount = 0;
 
 
